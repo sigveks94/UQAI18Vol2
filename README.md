@@ -16,3 +16,14 @@ ProblemSpec ps = new ProblemSpec("path/to/inputFile.txt");
 
 Enjoy the problem instance object
 
+**Simulator package**
+
+The simulator for you to test your policies. 
+
+Initialize the simulator by passing your problem spec to its constructor.
+
+```$xslt
+ProblemSpec ps = new ProblemSpec("path/to/inputFile.txt");
+Simulator sim = new Simulator(ps);
+```
+

@@ -3,7 +3,6 @@ package problem;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
-import java.text.DecimalFormat;
 import java.util.*;
 
 /**
@@ -19,12 +18,11 @@ public class ProblemSpec {
     /** car move range [-4, 5] **/
     public static final int CAR_MIN_MOVE = -4;
     public static final int CAR_MAX_MOVE = 5;
+    public static final int SLIP = 6;
+    public static final int BREAKDOWN = 7;
     public static final int CAR_MOVE_RANGE = 12;
     /** number of different tyres **/
     public static final int NUM_TYRE_MODELS = 4;
-
-    /** For rounding probabilities to 4 decimal places **/
-    private DecimalFormat df = new DecimalFormat("#.####");
 
     /** The level of the game **/
     private Level level;
@@ -48,13 +46,13 @@ public class ProblemSpec {
     /** Number of car types **/
     private int CT;
     /** Car probability mapping **/
-    Map<String, float[]> carMoveProbability;
+    LinkedHashMap<String, float[]> carMoveProbability;
     /** Number of drivers **/
     private int DT;
     /** Driver to probability mapping **/
-    Map<String, float[]> driverMoveProbability;
+    LinkedHashMap<String, float[]> driverMoveProbability;
     /** Tyre model to probability mapping **/
-    Map<String, float[]> tyreModelMoveProbability;
+    LinkedHashMap<Tire, float[]> tyreModelMoveProbability;
     /** Fuel usage matrix
      * Size is NT rows * CT columns
      * Each row, i, represents the ith terrain type
@@ -66,6 +64,12 @@ public class ProblemSpec {
      * Each column, j, represents the jth Car type */
     private float[][] slipProbability;
 
+    /**
+     * Load problem spec from input file
+     *
+     * @param fileName path to input file
+     * @throws IOException if can't find file or there is a format error
+     */
     public ProblemSpec(String fileName) throws IOException {
         loadProblem(fileName);
     }
@@ -84,8 +88,7 @@ public class ProblemSpec {
         sb.append("maxT: " + maxT + "\n");
         // 4.
         sb.append(environmentMap.toString()).append("\n");
-
-
+        
         return sb.toString();
     }
 
@@ -178,11 +181,11 @@ public class ProblemSpec {
             }
 
             // 9. Tyre model move probabilities
-            tyreModelMoveProbability = new HashMap<>();
+            tyreModelMoveProbability = new LinkedHashMap<>();
             for (int i = 0; i < NUM_TYRE_MODELS; i++) {
                 line = input.readLine();
                 lineNo++;
-                parseProbLine(line, tyreModelMoveProbability);
+                parseTireModelProbability(line, lineNo, tyreModelMoveProbability);
             }
 
             // 10. Fuel usage by terrain and car matrix
@@ -259,6 +262,26 @@ public class ProblemSpec {
         }
     }
 
+    private void parseTireModelProbability(String line, int lineNo,
+                                           Map<Tire, float[]> probMap) {
+        String[] splitLine = line.split(":");
+        Tire tireModel = parseTireModel(splitLine[0], lineNo);
+        Scanner s = new Scanner(splitLine[1]);
+        float[] probabilities = new float[CAR_MOVE_RANGE];
+        float pSum = 0;
+        for (int j = 0; j < CAR_MOVE_RANGE; j++) {
+            probabilities[j] = s.nextFloat();
+            pSum += probabilities[j];
+        }
+        probMap.put(tireModel, probabilities);
+        s.close();
+
+        if (Math.abs(pSum - 1.0) > 0.001) {
+            throw new InputMismatchException("Car move probability does not sum to 1.0");
+        }
+
+    }
+
     private List<Integer> parseTerrainCellIndices(String indexText, int lineNo) {
 
         List<Integer> indices = new ArrayList<>();
@@ -266,9 +289,6 @@ public class ProblemSpec {
         String[] splitText = indexText.split(",");
         String[] splitIndices;
         int start, end;
-
-
-
 
         for (String s: splitText) {
             splitIndices = s.split("-");
@@ -285,6 +305,22 @@ public class ProblemSpec {
             // else empty so no terrain of this type
         }
         return indices;
+    }
+
+    private Tire parseTireModel(String tireText, int lineNo) {
+        switch (tireText) {
+            case "all-terrain":
+                return Tire.ALL_TERRAIN;
+            case "mud":
+                return Tire.MUD;
+            case "low-profile":
+                return Tire.LOW_PROFILE;
+            case "performance":
+                return Tire.PERFORMANCE;
+            default:
+                String errMsg = "Invalid tyre type " + tireText + "on line " + lineNo;
+                throw new InputMismatchException(errMsg);
+        }
     }
 
     private Terrain parseTerrain(String terrainText, int lineNo) {
@@ -321,5 +357,72 @@ public class ProblemSpec {
                 String errMsg = "Invalid terrain type " + terrainText + "on line " + lineNo;
                 throw new InputMismatchException(errMsg);
         }
+    }
+
+    public Level getLevel() {
+        return level;
+    }
+
+    public float getDiscountFactor() {
+        return discountFactor;
+    }
+
+    public int getSlipRecoveryTime() {
+        return slipRecoveryTime;
+    }
+
+    public int getRepairTime() {
+        return repairTime;
+    }
+
+    public int getN() {
+        return N;
+    }
+
+    public int getMaxT() {
+        return maxT;
+    }
+
+    public int getNT() {
+        return NT;
+    }
+
+    public int getCT() {
+        return CT;
+    }
+
+    public int getDT() {
+        return DT;
+    }
+
+    /**
+     * Get the first car type in input file
+     *
+     * @return first car type in input file
+     */
+    public String getFirstCarType() {
+        // a little hacky sorry
+        // should be in order since its a LinkedHashMap
+        String carType = null;
+        for (String k: carMoveProbability.keySet()) {
+            carType = k;
+            break;
+        }
+        return carType;
+    }
+
+    /**
+     * Get the first driver in input file
+     *
+     * @return first driver in input file
+     */
+    public String getFirstDriver() {
+        // good ol' copy and paste
+        String driver = null;
+        for (String k: driverMoveProbability.keySet()) {
+            driver = k;
+            break;
+        }
+        return driver;
     }
 }
