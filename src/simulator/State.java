@@ -46,15 +46,16 @@ public class State {
      * Construct a new state with the given parameter values
      *
      * @param pos cell index of car in environment
-     * @param slip
-     * @param slipTimeLeft
-     * @param breakdown
-     * @param breakdownTimeLeft
-     * @param carType
-     * @param fuel
-     * @param tirePressure
-     * @param driver
-     * @param tireModel
+     * @param slip if car is in slip condition
+     * @param slipTimeLeft time remaining on slip if in slip
+     * @param breakdown if car is in breakdown condition
+     * @param breakdownTimeLeft time remaining on breakdown if in breakdown
+     * @param carType the type of car
+     * @param fuel the amount of fuel
+     *        (assumes ProblemSpec.FUEL_MIN <= fuel <= ProblemSpec.FUEL_MAX)
+     * @param tirePressure the pressure of tires
+     * @param driver the driver
+     * @param tireModel the model of the tires
      */
     public State(int pos, boolean slip, int slipTimeLeft, boolean breakdown,
                  int breakdownTimeLeft, String carType, int fuel,
@@ -77,11 +78,13 @@ public class State {
      *
      * @param carType the initial car type
      * @param driver the initial driver
+     * @param tire the initial tire model
      * @return the initial state
      */
-    public static State getStartState(String carType, String driver) {
+    public static State getStartState(String carType, String driver,
+                                      Tire tire) {
         return new State(0, false, 0, false, 0, carType, ProblemSpec.FUEL_MAX,
-                TirePressure.ONE_HUNDRED_PERCENT, driver, Tire.ALL_TERRAIN);
+                TirePressure.ONE_HUNDRED_PERCENT, driver, tire);
     }
 
     /**
@@ -214,11 +217,34 @@ public class State {
      * @return the next state
      */
     public State addFuel(int fuelToAdd) {
+        if (fuelToAdd > 0) {
+            throw new IllegalArgumentException("Fuel to add must be positive");
+        }
+
         State nextState = copyState();
         if (nextState.fuel + fuelToAdd > ProblemSpec.FUEL_MAX) {
             nextState.fuel = ProblemSpec.FUEL_MAX;
         } else {
             nextState.fuel += fuelToAdd;
+        }
+        return nextState;
+    }
+
+    /**
+     * Return the next state after consuming fuel in current state.
+     *
+     * @param fuelConsumed amount of fuel consumed
+     * @return the next state
+     */
+    public State consumeFuel(int fuelConsumed) {
+        if (fuelConsumed > 0) {
+            throw new IllegalArgumentException("Fuel consumed must be positive");
+        }
+        State nextState = copyState();
+        nextState.fuel -= fuelConsumed;
+        if (nextState.fuel < ProblemSpec.FUEL_MIN) {
+            throw new IllegalArgumentException("Too much fuel consumed: "
+                    + fuelConsumed);
         }
         return nextState;
     }

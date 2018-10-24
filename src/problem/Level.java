@@ -12,8 +12,8 @@ public class Level {
     private int levelNumber;
     /** List of terrain types present in level **/
     private List<Terrain> terrainTypes;
-    /** List of actions possible in level **/
-    private List<Action> availableActions;
+    /** List of action types possible in level **/
+    private List<ActionType> availableActions;
 
     /**
      * Load the level number
@@ -41,8 +41,12 @@ public class Level {
         return terrainTypes;
     }
 
-    public List<Action> getAvailableActions() {
+    public List<ActionType> getAvailableActions() {
         return availableActions;
+    }
+
+    public boolean isValidActionForLevel(ActionType a) {
+        return availableActions.contains(a);
     }
 
     private void loadLevel(int levelNumber) {
@@ -100,20 +104,20 @@ public class Level {
 
     private void loadActions(int maxAction) {
         if (maxAction >= 4) {
-            availableActions.add(Action.CONTINUE_MOVING);
-            availableActions.add(Action.CHANGE_CAR);
-            availableActions.add(Action.CHANGE_DRIVER);
-            availableActions.add(Action.CHANGE_TYRES);
+            availableActions.add(ActionType.CONTINUE_MOVING);
+            availableActions.add(ActionType.CHANGE_CAR);
+            availableActions.add(ActionType.CHANGE_DRIVER);
+            availableActions.add(ActionType.CHANGE_TYRES);
         }
         if (maxAction >= 6) {
-            availableActions.add(Action.ADD_FUEL);
-            availableActions.add(Action.CHANGE_PRESSURE);
+            availableActions.add(ActionType.ADD_FUEL);
+            availableActions.add(ActionType.CHANGE_PRESSURE);
         }
         if (maxAction >= 7) {
-            availableActions.add(Action.CHANGE_CAR_AND_DRIVER);
+            availableActions.add(ActionType.CHANGE_CAR_AND_DRIVER);
         }
         if (maxAction >= 8) {
-            availableActions.add(Action.CHANGE_TYRE_FUEL_PRESSURE);
+            availableActions.add(ActionType.CHANGE_TYRE_FUEL_PRESSURE);
         }
     }
 }

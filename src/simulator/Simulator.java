@@ -1,8 +1,7 @@
 package simulator;
 
-import problem.Action;
-import problem.ActionType;
-import problem.ProblemSpec;
+import jdk.nashorn.internal.runtime.regexp.joni.exception.ValueException;
+import problem.*;
 
 import java.io.IOException;
 
@@ -27,7 +26,7 @@ public class Simulator {
     public Simulator(ProblemSpec ps) {
         this.ps = ps;
         currentState = State.getStartState(ps.getFirstCarType(),
-                ps.getFirstDriver());
+                ps.getFirstDriver(), ps.getFirstTireModel());
         steps = 0;
     }
 
@@ -42,14 +41,21 @@ public class Simulator {
     }
 
     /**
-     * Perform an action against environment and recieve the next state
+     * Perform an action against environment and receive the next state
      *
      * @param a the action to perform
      * @return the next state
      */
-    public State step(Action a) {
+    public State step(Action a) throws ValueException {
 
         State nextState;
+
+        if (!actionValidForLevel(a)) {
+            throw new IllegalArgumentException("ActionType A"
+                    + a.getActionType().getActionNo()
+                    + " is an invalid action for problem level "
+                    + ps.getLevel());
+        }
 
         switch(a.getActionType().getActionNo()) {
             case 1:
@@ -83,12 +89,24 @@ public class Simulator {
     }
 
     /**
+     * Checks if given action is valid for the current problem level
+     *
+     * @param a the action being performed
+     * @return True if action is value, False otherwise
+     */
+    private boolean actionValidForLevel(Action a) {
+        return ps.getLevel().isValidActionForLevel(a.getActionType());
+    }
+
+    /**
      * Perform CONTINUE_MOVING action
      *
      * @param a a CONTINUE_MOVING action object
      * @return the next state
      */
     private State performA1(Action a) {
+
+        State nextState;
 
         if (currentState.isInSlipCondition()) {
             return currentState.reduceSlipTimeLeft();
@@ -97,19 +115,33 @@ public class Simulator {
             return currentState.reduceBreakdownTimeLeft();
         }
 
+        // check there is enough fuel to make move in current state
+        int fuelRequired = getFuelConsumption();
+        int currentFuel = currentState.getFuel();
+        if (fuelRequired > currentFuel) {
+            return currentState;
+        }
+
         // Sample move distance
         int moveDistance = sampleMoveDistance();
 
         // handle slip and breakdown cases
         if (moveDistance == ProblemSpec.SLIP) {
-            return currentState.changeSlipCondition(true,
+            nextState =  currentState.changeSlipCondition(true,
                     ps.getSlipRecoveryTime());
-        }
-        if (moveDistance == ProblemSpec.BREAKDOWN) {
-            return currentState.changeBreakdownCondition(true,
+        } else if (moveDistance == ProblemSpec.BREAKDOWN) {
+            nextState = currentState.changeBreakdownCondition(true,
                     ps.getRepairTime());
+        } else {
+            nextState = currentState.changePosition(moveDistance, ps.getN());
         }
-        return currentState.changePosition(moveDistance, ps.getN());
+
+        // handle fuel usage for level 2 and above
+        if (ps.getLevel().getLevelNumber() > 1) {
+            nextState = nextState.consumeFuel(fuelRequired);
+        }
+
+        return nextState;
     }
 
     /**
@@ -119,7 +151,75 @@ public class Simulator {
      * @return the move distance in range [-4, 5] or SLIP or BREAKDOWN
      */
     private int sampleMoveDistance() {
+
+        // get parameters of current state
+        Terrain terrain = ps.getEnvironmentMap()[currentState.getPos() - 1];
+        String car = currentState.getCarType();
+        String driver = currentState.getDriver();
+        Tire tire = currentState.getTireModel();
+
+        // calculate priors
+        float priorK = 1 / ps.CAR_MOVE_RANGE;
+        float priorCar = 1 / ps.getCT();
+        float priorDriver = 1 / ps.getDT();
+        float priorTire = 1 / ps.NUM_TYRE_MODELS;
+        // TODO: prior for terrain?
+
+        // get probabilities of k given parameter
+        float[] pKGivenCar = ps.getCarMoveProbability().get(car);
+        float[] pKGivenDriver = ps.getDriverMoveProbability().get(driver);
+        float[] pKGivenTire = ps.getTireModelMoveProbability().get(tire);
+
+        // use bayes rule to get probability of parameter given k
+        float[] pCarGivenK = bayesRule(pKGivenCar, priorCar, priorK);
+        float[] pDriverGivenK = bayesRule(pKGivenDriver, priorDriver, priorK);
+        float[] pTireGivenK = bayesRule(pKGivenTire, priorTire, priorK);
+
+        // use conditional probability formula on assignment sheet to get what
+        // we want
+        
+
+
         return -1;
+    }
+
+    /**
+     * Apply bayes rule to all values in cond probs list.
+     *
+     * @param condProb list of P(B|A)
+     * @param priorA prior probability of parameter A
+     * @param priorB prior probability of parameter B
+     * @return list of P(A|B)
+     */
+    private float[] bayesRule(float[] condProb, float priorA, float priorB) {
+
+        float[] swappedProb = new float[condProb.length];
+
+        for (int i = 0; i < condProb.length; i++) {
+            swappedProb[i] = (condProb[i] * priorA) / priorB;
+        }
+        return swappedProb;
+    }
+
+
+    private int getFuelConsumption() {
+
+        // get parameters of current state
+        Terrain terrain = ps.getEnvironmentMap()[currentState.getPos() - 1];
+        String car = currentState.getCarType();
+        TirePressure pressure = currentState.getTirePressure();
+
+        // get fuel consumption
+        int terrainIndex = ps.getTerrainIndex(terrain);
+        int carIndex = ps.getCarIndex(car);
+        int fuelConsumption = ps.getFuelUsage()[terrainIndex][carIndex];
+
+        if (pressure == TirePressure.FIFTY_PERCENT) {
+            fuelConsumption *= 3;
+        } else if (pressure == TirePressure.SEVENTY_FIVE_PERCENT) {
+            fuelConsumption *= 2;
+        }
+        return fuelConsumption;
     }
 
     /**

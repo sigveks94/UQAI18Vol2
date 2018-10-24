@@ -42,17 +42,25 @@ public class ProblemSpec {
     private Terrain[] environmentMap;
     /** The terrain map which maps terrains to their cell indices on the
      * environment map */
-    LinkedHashMap<Terrain, List<Integer>> terrainMap;
+    private LinkedHashMap<Terrain, List<Integer>> terrainMap;
+    /** Ordering of terrain as they appear in input **/
+    private List<Terrain> terrainOrder;
     /** Number of car types **/
     private int CT;
     /** Car probability mapping **/
-    LinkedHashMap<String, float[]> carMoveProbability;
+    private LinkedHashMap<String, float[]> carMoveProbability;
+    /** Ordering of car types as they appear in input **/
+    private List<String> carOrder;
     /** Number of drivers **/
     private int DT;
     /** Driver to probability mapping **/
-    LinkedHashMap<String, float[]> driverMoveProbability;
+    private LinkedHashMap<String, float[]> driverMoveProbability;
+    /** Ordering of drivers as they appear in input **/
+    private List<String> driverOrder;
     /** Tyre model to probability mapping **/
-    LinkedHashMap<Tire, float[]> tyreModelMoveProbability;
+    private LinkedHashMap<Tire, float[]> tireModelMoveProbability;
+    /** Ordering of tire models as they appear in input **/
+    private List<Tire> tireOrder;
     /** Fuel usage matrix
      * Size is NT rows * CT columns
      * Each row, i, represents the ith terrain type
@@ -88,7 +96,7 @@ public class ProblemSpec {
         sb.append("maxT: " + maxT + "\n");
         // 4.
         sb.append(environmentMap.toString()).append("\n");
-        
+
         return sb.toString();
     }
 
@@ -137,6 +145,7 @@ public class ProblemSpec {
             int NT = level.get_NT();
             environmentMap = new Terrain[N];
             terrainMap = new LinkedHashMap<>();
+            terrainOrder = new ArrayList<>();
             for (int i = 0; i < NT; i++) {
                 line = input.readLine();
                 lineNo++;
@@ -148,6 +157,7 @@ public class ProblemSpec {
                 for (Integer j: terrainIndices) {
                     environmentMap[j-1] = terrain;
                 }
+                terrainOrder.add(terrain);
             }
 
             // 5. line (3+NT+1)
@@ -158,11 +168,14 @@ public class ProblemSpec {
             s.close();
 
             // 6. line (3+NT+2) to (3+NT+2+CT)
+            String car;
             carMoveProbability = new LinkedHashMap<>();
+            carOrder = new ArrayList<>();
             for (int i = 0; i < CT; i++) {
                 line = input.readLine();
                 lineNo++;
-                parseProbLine(line, carMoveProbability);
+                car = parseProbLine(line, carMoveProbability);
+                carOrder.add(car);
             }
 
             // 7. Number of drivers line
@@ -173,19 +186,26 @@ public class ProblemSpec {
             s.close();
 
             // 8. Driver move probabilities
+            String driver;
             driverMoveProbability = new LinkedHashMap<>();
+            driverOrder = new ArrayList<>();
             for (int i = 0; i < DT; i++) {
                 line = input.readLine();
                 lineNo++;
-                parseProbLine(line, driverMoveProbability);
+                driver = parseProbLine(line, driverMoveProbability);
+                driverOrder.add(driver);
             }
 
             // 9. Tyre model move probabilities
-            tyreModelMoveProbability = new LinkedHashMap<>();
+            Tire tire;
+            tireModelMoveProbability = new LinkedHashMap<>();
+            tireOrder = new ArrayList<>();
             for (int i = 0; i < NUM_TYRE_MODELS; i++) {
                 line = input.readLine();
                 lineNo++;
-                parseTireModelProbability(line, lineNo, tyreModelMoveProbability);
+                tire = parseTireModelProbability(line, lineNo,
+                        tireModelMoveProbability);
+                tireOrder.add(tire);
             }
 
             // 10. Fuel usage by terrain and car matrix
@@ -218,7 +238,6 @@ public class ProblemSpec {
             }
             s.close();
 
-
         } catch (InputMismatchException e) {
             System.out.println(e.getMessage());
             System.exit(1);
@@ -242,9 +261,10 @@ public class ProblemSpec {
      * starting at -4 upto 5, then slip and breakdown.
      *
      * @param line the line text
-     * @param probMap map the add entry to
+     * @param probMap map to add the entry to
+     * @return the name of thing
      */
-    private void parseProbLine(String line, Map<String, float[]> probMap) {
+    private String parseProbLine(String line, Map<String, float[]> probMap) {
         String[] splitLine = line.split(":");
         String thingName = splitLine[0];
         Scanner s = new Scanner(splitLine[1]);
@@ -260,9 +280,24 @@ public class ProblemSpec {
         if (Math.abs(pSum - 1.0) > 0.001) {
             throw new InputMismatchException("Car move probability does not sum to 1.0");
         }
+
+        return thingName;
     }
 
-    private void parseTireModelProbability(String line, int lineNo,
+    /**
+     * Parse a line of the below form and add entry to map:
+     *
+     *      tireModel : p0 p1 p2 ... p11
+     *
+     * where pi represents probability of ith possible car move distance,
+     * starting at -4 upto 5, then slip and breakdown.
+     *
+     * @param line the line of text
+     * @param lineNo the line no
+     * @param probMap map to add entry to
+     * @return the tire model
+     */
+    private Tire parseTireModelProbability(String line, int lineNo,
                                            Map<Tire, float[]> probMap) {
         String[] splitLine = line.split(":");
         Tire tireModel = parseTireModel(splitLine[0], lineNo);
@@ -280,6 +315,7 @@ public class ProblemSpec {
             throw new InputMismatchException("Car move probability does not sum to 1.0");
         }
 
+        return tireModel;
     }
 
     private List<Integer> parseTerrainCellIndices(String indexText, int lineNo) {
@@ -387,6 +423,10 @@ public class ProblemSpec {
         return NT;
     }
 
+    public Terrain[] getEnvironmentMap() {
+        return environmentMap;
+    }
+
     public int getCT() {
         return CT;
     }
@@ -395,20 +435,37 @@ public class ProblemSpec {
         return DT;
     }
 
+    public LinkedHashMap<String, float[]> getCarMoveProbability() {
+        return carMoveProbability;
+    }
+
+    public LinkedHashMap<Terrain, List<Integer>> getTerrainMap() {
+        return terrainMap;
+    }
+
+    public LinkedHashMap<String, float[]> getDriverMoveProbability() {
+        return driverMoveProbability;
+    }
+
+    public LinkedHashMap<Tire, float[]> getTireModelMoveProbability() {
+        return tireModelMoveProbability;
+    }
+
+    public int[][] getFuelUsage() {
+        return fuelUsage;
+    }
+
+    public float[][] getSlipProbability() {
+        return slipProbability;
+    }
+
     /**
      * Get the first car type in input file
      *
      * @return first car type in input file
      */
     public String getFirstCarType() {
-        // a little hacky sorry
-        // should be in order since its a LinkedHashMap
-        String carType = null;
-        for (String k: carMoveProbability.keySet()) {
-            carType = k;
-            break;
-        }
-        return carType;
+        return carOrder.get(0);
     }
 
     /**
@@ -417,12 +474,78 @@ public class ProblemSpec {
      * @return first driver in input file
      */
     public String getFirstDriver() {
-        // good ol' copy and paste
-        String driver = null;
-        for (String k: driverMoveProbability.keySet()) {
-            driver = k;
-            break;
-        }
-        return driver;
+        return driverOrder.get(0);
     }
+
+    /**
+     * Get the first tire model in input file
+     *
+     * @return first tire model in input file
+     */
+    public Tire getFirstTireModel() {
+        return tireOrder.get(0);
+    }
+
+    /**
+     * Return the index of car in terms of order in which is appeared in input
+     * file. This index can be used to access fuel and slip probability
+     * matrices.
+     *
+     * @param car the car type
+     * @return index of car type as it appeared in input
+     */
+    public int getCarIndex(String car) {
+        int index = carOrder.indexOf(car);
+        if (index == -1) {
+            throw new IllegalArgumentException("Invalid car type: " + car);
+        }
+        return index;
+    }
+
+    /**
+     * Return the index of driver in terms of order in which is appeared in
+     * input file.
+     *
+     * @param driver the driver
+     * @return index of driver type as it appeared in input
+     */
+    public int getDriverIndex(String driver) {
+        int index = driverOrder.indexOf(driver);
+        if (index == -1) {
+            throw new IllegalArgumentException("Invalid driver type: " + driver);
+        }
+        return index;
+    }
+
+    /**
+     * Return the index of terrain in terms of order in which is appeared in
+     * input file.
+     *
+     * @param terrain the terrain
+     * @return index of terrain as it appeared in input
+     */
+    public int getTerrainIndex(Terrain terrain) {
+        int index = terrainOrder.indexOf(terrain);
+        if (index == -1) {
+            throw new IllegalArgumentException("Invalid terrain: " + terrain);
+        }
+        return index;
+    }
+
+    /**
+     * Return the index of tire Model in terms of order in which is appeared in
+     * input file.
+     *
+     * @param tire the tire model
+     * @return index of tire model as it appeared in input
+     */
+    public int getTireIndex(Tire tire) {
+        int index = tireOrder.indexOf(tire);
+        if (index == -1) {
+            throw new IllegalArgumentException("Invalid tire model: " + tire);
+        }
+        return index;
+    }
+
+
 }
