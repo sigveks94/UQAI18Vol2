@@ -83,7 +83,8 @@ public class State {
      */
     public static State getStartState(String carType, String driver,
                                       Tire tire) {
-        return new State(0, false, 0, false, 0, carType, ProblemSpec.FUEL_MAX,
+        // position is not 0 indexed, as per assignment spec
+        return new State(1, false, 0, false, 0, carType, ProblemSpec.FUEL_MAX,
                 TirePressure.ONE_HUNDRED_PERCENT, driver, tire);
     }
 
@@ -301,6 +302,19 @@ public class State {
     public State copyState() {
         return new State(pos, slip, slipTimeLeft, breakdown, breakdownTimeLeft,
                 carType, fuel, tirePressure, driver, tireModel);
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("State: [ ");
+        sb.append("Pos=").append(pos).append(" | ");
+        sb.append("Car=").append(carType).append(" | ");
+        sb.append("Driver=").append(driver).append(" | ");
+        sb.append("Tire=").append(tireModel.toString()).append(" | ");
+        sb.append("Pressure=").append(tirePressure.asString()).append(" | ");
+        sb.append("Fuel=").append(fuel).append(" ]\n");
+        return sb.toString();
     }
 
     public int getPos() {

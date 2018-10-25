@@ -1,6 +1,5 @@
 package simulator;
 
-import jdk.nashorn.internal.runtime.regexp.joni.exception.ValueException;
 import problem.*;
 
 import java.io.IOException;
@@ -17,6 +16,9 @@ public class Simulator {
     private State currentState;
     /** The number of steps taken **/
     private int steps;
+    /** Whether to print progress messages or not
+     * Feel free to change this if you don't want messages printed **/
+    private boolean verbose = false;
 
     /**
      * Construct a new simulator instance from the given problem spec
@@ -25,9 +27,7 @@ public class Simulator {
      */
     public Simulator(ProblemSpec ps) {
         this.ps = ps;
-        currentState = State.getStartState(ps.getFirstCarType(),
-                ps.getFirstDriver(), ps.getFirstTireModel());
-        steps = 0;
+        reset();
     }
 
     /**
@@ -41,12 +41,28 @@ public class Simulator {
     }
 
     /**
-     * Perform an action against environment and receive the next state
+     * Reset the simulator and return initial state
+     *
+     * @return the start state
+     */
+    public State reset() {
+        steps = 0;
+        currentState = State.getStartState(ps.getFirstCarType(),
+                ps.getFirstDriver(), ps.getFirstTireModel());
+        if (verbose) {
+            System.out.println("Resetting simulator");
+            System.out.println("Start " + currentState.toString());
+        }
+        return currentState.copyState();
+    }
+
+    /**
+     * Perform an action against environment and receive the next state.
      *
      * @param a the action to perform
-     * @return the next state
+     * @return the next state or null if max time steps exceeded for problem
      */
-    public State step(Action a) throws ValueException {
+    public State step(Action a) throws IllegalArgumentException {
 
         State nextState;
 
@@ -57,9 +73,22 @@ public class Simulator {
                     + ps.getLevel());
         }
 
+        if (steps > ps.getMaxT()) {
+            if (verbose) {
+                System.out.println("Max time steps exceeded: " + steps + " > "
+                        + ps.getMaxT());
+            }
+            return null;
+        }
+
+        if (verbose) {
+            System.out.println("Step " + steps +": performing A"
+                    + a.getActionType().getActionNo());
+        }
+
         switch(a.getActionType().getActionNo()) {
             case 1:
-                nextState = performA1(a);
+                nextState = performA1();
                 break;
             case 2:
                 nextState = performA2(a);
@@ -85,6 +114,15 @@ public class Simulator {
 
         steps += 1;
         currentState = nextState.copyState();
+
+        if (verbose) {
+            System.out.println("\tNext " + nextState.toString());
+        }
+
+        if (verbose && isGoalState(nextState)) {
+            System.out.println("Goal reached after " + steps + " steps.");
+        }
+
         return nextState;
     }
 
@@ -101,10 +139,9 @@ public class Simulator {
     /**
      * Perform CONTINUE_MOVING action
      *
-     * @param a a CONTINUE_MOVING action object
      * @return the next state
      */
-    private State performA1(Action a) {
+    private State performA1() {
 
         State nextState;
 
@@ -127,12 +164,22 @@ public class Simulator {
 
         // handle slip and breakdown cases
         if (moveDistance == ProblemSpec.SLIP) {
-            nextState =  currentState.changeSlipCondition(true,
-                    ps.getSlipRecoveryTime());
+            if (verbose) {
+                System.out.println("\tSampled move distance=SLIP");
+            }
+            // remain in same state but certain number of steps pass
+            steps += ps.getSlipRecoveryTime();
+            nextState = currentState;
         } else if (moveDistance == ProblemSpec.BREAKDOWN) {
-            nextState = currentState.changeBreakdownCondition(true,
-                    ps.getRepairTime());
+            if (verbose) {
+                System.out.println("\tSampled move distance=BREAKDOWN");
+            }
+            steps += ps.getRepairTime();
+            nextState = currentState;
         } else {
+            if (verbose) {
+                System.out.println("\tSampled move distance=" + moveDistance);
+            }
             nextState = currentState.changePosition(moveDistance, ps.getN());
         }
 
@@ -148,39 +195,123 @@ public class Simulator {
      * Return the move distance by sampling from conditional probability
      * distribution.
      *
+     * N.B. this formula is not at all optimized for performance, so be wary if
+     * trying to use it for finding a policy
+     *
      * @return the move distance in range [-4, 5] or SLIP or BREAKDOWN
      */
     private int sampleMoveDistance() {
 
+        double[] moveProbs = getMoveProbs();
+
+        double p = Math.random();
+        double pSum = 0;
+        int move = 0;
+        for (int k = 0; k < ProblemSpec.CAR_MOVE_RANGE; k++) {
+            pSum += moveProbs[k];
+            if (p <= pSum) {
+                move = ps.convertIndexIntoMove(k);
+                break;
+            }
+        }
+        return move;
+    }
+
+    /**
+     * Calculate the conditional move probabilities for the current state.
+     *
+     *          P(K | C, D, Ti, Te, Pressure)
+     *
+     * @return list of move probabilities
+     */
+    private double[] getMoveProbs() {
+
         // get parameters of current state
         Terrain terrain = ps.getEnvironmentMap()[currentState.getPos() - 1];
+        int terrainIndex = ps.getTerrainIndex(terrain);
         String car = currentState.getCarType();
         String driver = currentState.getDriver();
         Tire tire = currentState.getTireModel();
 
         // calculate priors
-        float priorK = 1 / ps.CAR_MOVE_RANGE;
-        float priorCar = 1 / ps.getCT();
-        float priorDriver = 1 / ps.getDT();
-        float priorTire = 1 / ps.NUM_TYRE_MODELS;
-        // TODO: prior for terrain?
+        double priorK = 1.0 / ProblemSpec.CAR_MOVE_RANGE;
+        double priorCar = 1.0 / ps.getCT();
+        double priorDriver = 1.0 / ps.getDT();
+        double priorTire = 1.0 / ProblemSpec.NUM_TYRE_MODELS;
+        double priorTerrain = 1.0 / ps.getNT();
+        double priorPressure = 1.0 / ProblemSpec.TIRE_PRESSURE_LEVELS;
 
         // get probabilities of k given parameter
-        float[] pKGivenCar = ps.getCarMoveProbability().get(car);
-        float[] pKGivenDriver = ps.getDriverMoveProbability().get(driver);
-        float[] pKGivenTire = ps.getTireModelMoveProbability().get(tire);
+        double[] pKGivenCar = ps.getCarMoveProbability().get(car);
+        double[] pKGivenDriver = ps.getDriverMoveProbability().get(driver);
+        double[] pKGivenTire = ps.getTireModelMoveProbability().get(tire);
+        double pSlipGivenTerrain = ps.getSlipProbability()[terrainIndex];
+        double[] pKGivenPressureTerrain = convertSlipProbs(pSlipGivenTerrain);
 
         // use bayes rule to get probability of parameter given k
-        float[] pCarGivenK = bayesRule(pKGivenCar, priorCar, priorK);
-        float[] pDriverGivenK = bayesRule(pKGivenDriver, priorDriver, priorK);
-        float[] pTireGivenK = bayesRule(pKGivenTire, priorTire, priorK);
+        double[] pCarGivenK = bayesRule(pKGivenCar, priorCar, priorK);
+        double[] pDriverGivenK = bayesRule(pKGivenDriver, priorDriver, priorK);
+        double[] pTireGivenK = bayesRule(pKGivenTire, priorTire, priorK);
+        double[] pPressureTerrainGivenK = bayesRule(pKGivenPressureTerrain,
+                (priorTerrain * priorPressure), priorK);
 
         // use conditional probability formula on assignment sheet to get what
-        // we want
-        
+        // we want (but what is it that we want....)
+        double[] kProbs = new double[ProblemSpec.CAR_MOVE_RANGE];
+        double kProbsSum = 0;
+        double kProb;
+        for (int k = 0; k < ProblemSpec.CAR_MOVE_RANGE; k++) {
+            kProb = magicFormula(pCarGivenK[k], pDriverGivenK[k],
+                    pTireGivenK[k], pPressureTerrainGivenK[k], priorK);
+            kProbsSum += kProb;
+            kProbs[k] = kProb;
+        }
 
+        // Normalize
+        for (int k = 0; k < ProblemSpec.CAR_MOVE_RANGE; k++) {
+            kProbs[k] /= kProbsSum;
+        }
 
-        return -1;
+        return kProbs;
+    }
+
+    /**
+     * Convert the probability of slipping on a given terrain with 50% tire
+     * pressure into a probability list, of move distance versus current
+     * terrain and tire pressure.
+     *
+     * @param slipProb probability of slipping on current terrain and 50%
+     *                 tire pressure
+     * @return list of move probabilities given current terrain and pressure
+     */
+    private double[] convertSlipProbs(double slipProb) {
+
+        // Adjust slip probability based on tire pressure
+        TirePressure pressure = currentState.getTirePressure();
+        if (pressure == TirePressure.SEVENTY_FIVE_PERCENT) {
+            slipProb *= 2;
+        } else if (pressure == TirePressure.ONE_HUNDRED_PERCENT) {
+            slipProb *= 3;
+        }
+        // Make sure new probability is not above max
+        if (slipProb > ProblemSpec.MAX_SLIP_PROBABILITY) {
+            slipProb = ProblemSpec.MAX_SLIP_PROBABILITY;
+        }
+
+        // for each terrain, all other action probabilities are uniform over
+        // remaining probability
+        double[] kProbs = new double[ProblemSpec.CAR_MOVE_RANGE];
+        double leftOver = 1 - slipProb;
+        double otherProb = leftOver / (ProblemSpec.CAR_MOVE_RANGE - 1);
+        for (int i = 0; i < ProblemSpec.CAR_MOVE_RANGE; i++) {
+            if (i == ps.getIndexOfMove(ProblemSpec.SLIP)) {
+                kProbs[i] = slipProb;
+            } else {
+                kProbs[i] = otherProb;
+            }
+        }
+
+        return kProbs;
     }
 
     /**
@@ -191,9 +322,9 @@ public class Simulator {
      * @param priorB prior probability of parameter B
      * @return list of P(A|B)
      */
-    private float[] bayesRule(float[] condProb, float priorA, float priorB) {
+    private double[] bayesRule(double[] condProb, double priorA, double priorB) {
 
-        float[] swappedProb = new float[condProb.length];
+        double[] swappedProb = new double[condProb.length];
 
         for (int i = 0; i < condProb.length; i++) {
             swappedProb[i] = (condProb[i] * priorA) / priorB;
@@ -201,7 +332,27 @@ public class Simulator {
         return swappedProb;
     }
 
+    /**
+     * Conditional probability formula from assignment 2 sheet
+     *
+     * @param pA P(A | E)
+     * @param pB P(B | E)
+     * @param pC P(C | E)
+     * @param pD P(D | E)
+     * @param priorE P(E)
+     * @return numerator of the P(E | A, B, C, D) formula (still need to divide
+     *      by sum over E)
+     */
+    private double magicFormula(double pA, double pB, double pC, double pD,
+                               double priorE) {
+        return pA * pB * pC * pD * priorE;
+    }
 
+    /**
+     * Get the fuel consumption of moving given the current state
+     *
+     * @return move fuel consumption for current state
+     */
     private int getFuelConsumption() {
 
         // get parameters of current state
@@ -243,9 +394,9 @@ public class Simulator {
     }
 
     /**
-     * Perform the CHANGE_TYRES action
+     * Perform the CHANGE_TIRES action
      *
-     * @param a a CHANGE_TYRES action object
+     * @param a a CHANGE_TIRES action object
      * @return the next state
      */
     private State performA4(Action a) {
@@ -259,6 +410,10 @@ public class Simulator {
      * @return the next state
      */
     private State performA5(Action a) {
+        // calculate number of steps used for refueling (minus 1 since we add
+        // 1 in main function
+        int stepsRequired = (int) Math.ceil(a.getFuel() / 10);
+        steps += (stepsRequired - 1);
         return currentState.addFuel(a.getFuel());
     }
 
@@ -284,9 +439,9 @@ public class Simulator {
     }
 
     /**
-     * Perform the CHANGE_TYRE_FUEL_PRESSURE action
+     * Perform the CHANGE_TIRE_FUEL_PRESSURE action
      *
-     * @param a a CHANGE_TYRE_FUEL_PRESSURE action object
+     * @param a a CHANGE_TIRE_FUEL_PRESSURE action object
      * @return the next state
      */
     private State performA8(Action a) {
@@ -301,6 +456,9 @@ public class Simulator {
      * @return True if s is goal state, False otherwise
      */
     public Boolean isGoalState(State s) {
+        if (s == null) {
+            return false;
+        }
         return s.getPos() >= ps.getN();
     }
 

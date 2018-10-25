@@ -27,3 +27,12 @@ ProblemSpec ps = new ProblemSpec("path/to/inputFile.txt");
 Simulator sim = new Simulator(ps);
 ```
 
+To utilize the simulator, simply call the step function which accepts an
+Action class instance and returns the next state.
+
+```$xslt
+Action a = new Action(ActionType.MOVE)    // or some other action
+State nextState = sim.step(a);
+```
+
+Check out the SimulatorTest for an example of using random actions.
