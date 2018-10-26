@@ -461,5 +461,9 @@ public class Simulator {
         }
         return s.getPos() >= ps.getN();
     }
+    
+    public ProblemSpec getProblemSpec() {
+    	return ps;
+    }
 
 }

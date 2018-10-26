@@ -17,36 +17,62 @@ public class Node {
 	private State currentState;
 	private Node parentNode;
 	private int totVisits;
-	private int value;
+	private double value;
 	private final static int C = 2; //The discountfactor to be used in UpperConfidenceBound 
 	private final static int M = 100000000; //Large number to represent infinity
 	private double UCB;
+	private Action action; //the predecessor´s action
 	
-	//ADD FIELD FOR TIME UNITS. GETTERS AND SETTERS. 
+	private int timeUnits; 
 	
-	public Node(State currentState, Node parentNode) {
+	public Node(State currentState, Node parentNode, Action action) {
 		this.currentState = currentState;
 		this.parentNode = parentNode;
 		totVisits = 0;
 		value = 0;
 		UCB = 0;
+		setTimeUnits();
+		this.action = action;
 		
+	}
+	
+	public Action getAction() {
+		return action;
+	}
+	
+	public int getTimeUnits() {
+		return timeUnits;
+	}
+	
+	public void setTimeUnits() {
+		if(parentNode == null) {
+			timeUnits = 0;
+		}
+		else {
+			timeUnits += parentNode.getTimeUnits() + 1;
+			if(currentState.isInSlipCondition()) {
+				timeUnits += ProblemSpec.getSlipRecoveryTime();
+			}
+			if(currentState.isInBreakdownCondition()) {
+				timeUnits += ProblemSpec.getRepairTime();
+			}
+		}
 	}
 
 	public int getTotVisits() {
 		return totVisits;
 	}
 
-	public void setTotVisits(int totVisits) {
-		this.totVisits = totVisits;
+	public void updateTotVisits() {
+		this.totVisits += 1;
 	}
 
-	public int getValue() {
+	public double getValue() {
 		return value;
 	}
 
-	public void setValue(int value) {
-		this.value = value;
+	public void setValue(double value) {
+		this.value += value;
 	}
 
 	public State getCurrentState() {
@@ -59,7 +85,7 @@ public class Node {
 	
 	
 	public double calculateUCB() {
-		if(totVisits == 0) {
+	 	if(totVisits == 0) {
 			return M;
 		}
 		double avgValue = value/totVisits;
