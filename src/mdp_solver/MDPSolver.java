@@ -14,21 +14,19 @@ public class MDPSolver {
 	private HashMap<Node, List<Node>> childNodes;
 	private ProblemSpec ps;
 	private Level level;
-	private Simulator sim;
+	private OwnSimulator sim;
 	private List<Action> actionSpace;
 	
-	public MDPSolver(Simulator sim) {
+	public MDPSolver(OwnSimulator sim, ProblemSpec ps) {
 		childNodes = new HashMap<>();
 		
 		this.sim = sim;
 		
-		ps = sim.getProblemSpec();
+		this.ps = ps;
 		
 		level = ps.getLevel();
 		
 		actionSpace = generateActionSpace();
-		
-		
 	}
 	
 	/**

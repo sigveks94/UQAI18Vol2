@@ -1,6 +1,7 @@
-package simulator;
+package mdp_solver;
 
 import problem.*;
+import simulator.*;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -10,7 +11,7 @@ import java.util.List;
  * This class is the simulator for the problem.
  * The simulator takes in an action and returns the next state.
  */
-public class Simulator {
+public class OwnSimulator {
 
     /** Problem spec for the current problem **/
     private ProblemSpec ps;
@@ -34,7 +35,7 @@ public class Simulator {
      * @param ps the ProblemSpec
      * @param outputFile the path for output file
      */
-    public Simulator(ProblemSpec ps, String outputFile) {
+    public OwnSimulator(ProblemSpec ps, String outputFile) {
         this.ps = ps;
         this.outputFile = outputFile;
         reset();
@@ -47,7 +48,7 @@ public class Simulator {
      * @param outputFile the path for output file
      * @throws IOException if can't find file or there is a format error
      */
-    public Simulator(String inputFile, String outputFile) throws IOException {
+    public OwnSimulator(String inputFile, String outputFile) throws IOException {
         this(new ProblemSpec(inputFile), outputFile);
     }
 
