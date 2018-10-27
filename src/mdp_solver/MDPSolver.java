@@ -1,5 +1,8 @@
 package mdp_solver;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -16,8 +19,10 @@ public class MDPSolver {
 	private Level level;
 	private OwnSimulator sim;
 	private List<Action> actionSpace;
+	private List<Step> stepRecords;
+	private String outPutFileName;
 	
-	public MDPSolver(OwnSimulator sim, ProblemSpec ps) {
+	public MDPSolver(OwnSimulator sim, ProblemSpec ps, String outPutFileName) {
 		childNodes = new HashMap<>();
 		
 		this.sim = sim;
@@ -27,6 +32,8 @@ public class MDPSolver {
 		level = ps.getLevel();
 		
 		actionSpace = generateActionSpace();
+		stepRecords = new ArrayList<>();
+		this.outPutFileName = outPutFileName;
 	}
 	
 	/**
@@ -103,7 +110,12 @@ public class MDPSolver {
 			chosenNodes.add(currentRootNode);
 		}
 		
-		//OUTPUT-FORMATTING AND TWEAKING - ONLY NEED TO ITERATE THE CHOSENNODES-LIST AND EXTRACT THE INFORMATION FROM THE NODES
+		for(Node node : chosenNodes) {
+			Step step = new Step(node.getTimeUnits(), node.getCurrentState(), node.getAction());
+			stepRecords.add(step);
+		}
+		
+		outputSteps(true);
 		
 	}
 	
@@ -203,6 +215,43 @@ public class MDPSolver {
     
     public int getRepairTime() {
     	return ps.getRepairTime();
+    }
+    
+    /**
+     * Write the step record to the output file
+     *
+     * @param goalReached whether the goal was reached
+     */
+    private void outputSteps(boolean goalReached) {
+
+        System.out.println("Writing steps to output file");
+
+        try (BufferedWriter output = new BufferedWriter(new FileWriter(outPutFileName))) {
+
+            for (Step s: stepRecords) {
+                output.write(s.getOutputFormat());
+            }
+
+            if (goalReached) {
+                output.write("Goal reached, you bloody ripper!");
+            } else {
+                output.write("Computer says no. Max steps reached: max steps = " + ps.getMaxT());
+            }
+
+        } catch (IOException e) {
+            System.out.println("Error with output file");
+            System.out.println(e.getMessage());
+            System.out.println("Vomiting output to stdout instead");
+            for (Step s: stepRecords) {
+                System.out.print(s.getOutputFormat());
+            }
+
+            if (goalReached) {
+                System.out.println("Goal reached, you bloody ripper!");
+            } else {
+                System.out.println("Computer says no. Max steps reached: max steps = " + ps.getMaxT());
+            }
+        }
     }
 	
 	/*

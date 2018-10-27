@@ -92,7 +92,6 @@ public class OwnSimulator {
                 System.out.println("Max time steps exceeded: " + steps + " > "
                         + ps.getMaxT());
             }
-            outputSteps(false);
             return null;
         }
 
@@ -127,9 +126,6 @@ public class OwnSimulator {
                 nextState = performA8(a);
         }
 
-        // add step to record for outputting
-        stepRecord.add(new Step(steps, nextState, a));
-
         // handle slip and breakdown cases, we do this now so we can generate
         // correct output format
         if (nextState.isInSlipCondition()) {
@@ -153,7 +149,6 @@ public class OwnSimulator {
             if (verbose) {
                 System.out.println("Goal reached after " + steps + " steps.");
             }
-            outputSteps(true);
         }
 
         return nextState;
@@ -504,40 +499,5 @@ public class OwnSimulator {
         return steps;
     }
 
-    /**
-     * Write the step record to the output file
-     *
-     * @param goalReached whether the goal was reached
-     */
-    private void outputSteps(boolean goalReached) {
-
-        System.out.println("Writing steps to output file");
-
-        try (BufferedWriter output = new BufferedWriter(new FileWriter(outputFile))) {
-
-            for (Step s: stepRecord) {
-                output.write(s.getOutputFormat());
-            }
-
-            if (goalReached) {
-                output.write("Goal reached, you bloody ripper!");
-            } else {
-                output.write("Computer says no. Max steps reached: max steps = " + ps.getMaxT());
-            }
-
-        } catch (IOException e) {
-            System.out.println("Error with output file");
-            System.out.println(e.getMessage());
-            System.out.println("Vomiting output to stdout instead");
-            for (Step s: stepRecord) {
-                System.out.print(s.getOutputFormat());
-            }
-
-            if (goalReached) {
-                System.out.println("Goal reached, you bloody ripper!");
-            } else {
-                System.out.println("Computer says no. Max steps reached: max steps = " + ps.getMaxT());
-            }
-        }
-    }
+    
 }
