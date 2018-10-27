@@ -119,36 +119,69 @@ public class MDPSolver {
 		
 	}
 	
+	//RETURNS THE NEXT SELECTED NODE OUT OF THE OPTIONS THAT HAS THE BEST UCB-SCORE
 	public Node selectNextRootNode(Node node) {
-		//RETURNS THE NEXT SELECTED NODE OUT OF THE OPTIONS THAT HAS THE BEST UCB-SCORE
-		return null;
+		
+		List<Node> children = childNodes.get(node);
+		double bestUCB = -1;
+		Node nextRootNode = null;
+		for(Node child : children) {
+			if(child.getUCB() > bestUCB) {
+				nextRootNode = child;
+				bestUCB = child.getUCB();
+			}
+		}
+		return nextRootNode;
 	}
 	
+	// WHILE LOOP WITH EXIT CONDITION TIME = 13 
+	// INSIDE IS MCTSITERATION-ALGORITHM WHICH SELECTS, EXPANDS AND ROLLOUTS CONTINOUSLY
+	// THIS RESULTS IN ALL AFFECTED NODES� VALUES AND VISITED-FREQUENCIES ARE UPDATED
+	// NEED TO CREATE A FUNCTION THAT SELECTS THE NEXT NODE WICH IS THE SUBJECT OF THE NEXT WHILE-LOOP (aka selectNextLeafNode(rootNode))
+	// SHOULD END WITH SETTING THE PARENT NODE OF STATE WE END UP IN AS NULL
+	
+	//DETTE ER EN ITERASJON
 	private Node MCTSIteration(Node rootNode) {
-		
-		// WHILE LOOP WITH EXIT CONDITION TIME = 13 
-		// INSIDE IS MCTSITERATION-ALGORITHM WHICH SELECTS, EXPANDS AND ROLLOUTS CONTINOUSLY
-		// THIS RESULTS IN ALL AFFECTED NODES� VALUES AND VISITED-FREQUENCIES ARE UPDATED
-		// NEED TO CREATE A FUNCTION THAT SELECTS THE NEXT LEAFNODE WICH IS THE SUBJECT OF THE NEXT WHILE-LOOP (aka selectNextLeafNode(rootNode))
-		// SHOULD END WITH SETTING THE PARENT NODE OF STATE WE END UP IN AS NULL
-		
+		final long startTime = System.currentTimeMillis();
+		Node currentNode = rootNode;
+		//DETTE ER EN MINI-ITERASJON
+		while(System.currentTimeMillis() - startTime < 13900) {
+			if(currentNode.getTotVisits() == 0 && currentNode.getParentNode() != null) {
+				rollout(currentNode);
+			}
+			else {
+				Node nodeToRollout = expand(currentNode);
+				rollout(nodeToRollout);
+			}
+			currentNode = selectNextLeafNode(rootNode);
+		}
 		return selectNextRootNode(rootNode);
 	}
 	
 	
 	
-	//COMPLETE THIS
-		public void expand(Node node){
+		private Node selectNextLeafNode(Node rootNode) {
+		Node currentNode = rootNode;
+		while(childNodes.containsKey(currentNode)) {
+			currentNode = selectNextRootNode(currentNode);
+		}
+		return currentNode;
+	}
+
+		public Node expand(Node node){
 			List<Node> nodes = new ArrayList<>();
 			for(Action action : actionSpace) {
 				State state = sim.step(action);
 				nodes.add(new Node(state, node, action, this));
 			}
 			childNodes.put(node, nodes);
+			return nodes.get(0);
 		}
+		
+		
 	
 	
-	private void rollOut(Node node) {
+	private void rollout(Node node) {
 		
 		double timeSpent = node.getTimeUnits();
 		double timeAllowed = ps.getMaxT();
