@@ -57,6 +57,7 @@ public class Node {
 			if(currentState.isInBreakdownCondition()) {
 				timeUnits += mdp.getRepairTime();
 			}
+			
 		}
 	}
 

@@ -37,6 +37,7 @@ public class OwnSimulator {
         this.ps = ps;
         reset();
     }
+    
 
     /**
      * Construct a new simulator instance from the given input file

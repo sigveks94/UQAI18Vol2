@@ -97,6 +97,7 @@ public class MDPSolver {
 	 */
 	
 	public void MCTS(){
+		
 		Node firstNode = new Node(State.getStartState(ps.getFirstCarType(), ps.getFirstDriver(), ps.getFirstTireModel()), null, null, this);
 		List<Node> chosenNodes= new ArrayList<>();
 		chosenNodes.add(firstNode);

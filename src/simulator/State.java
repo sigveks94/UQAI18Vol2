@@ -76,6 +76,7 @@ public class State {
         return new State(1, false, false, carType, ProblemSpec.FUEL_MAX,
                 TirePressure.ONE_HUNDRED_PERCENT, driver, tire);
     }
+    
 
     /**
      * Return the next state after moving the cars position from current state.
