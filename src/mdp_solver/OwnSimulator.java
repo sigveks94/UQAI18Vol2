@@ -24,8 +24,6 @@ public class OwnSimulator {
     private boolean verbose = false;
     /** A container to store steps for output **/
     private List<Step> stepRecord;
-    /** path and name for output file **/
-    private String outputFile;
 
 
 
@@ -35,9 +33,8 @@ public class OwnSimulator {
      * @param ps the ProblemSpec
      * @param outputFile the path for output file
      */
-    public OwnSimulator(ProblemSpec ps, String outputFile) {
+    public OwnSimulator(ProblemSpec ps) {
         this.ps = ps;
-        this.outputFile = outputFile;
         reset();
     }
 
@@ -48,8 +45,8 @@ public class OwnSimulator {
      * @param outputFile the path for output file
      * @throws IOException if can't find file or there is a format error
      */
-    public OwnSimulator(String inputFile, String outputFile) throws IOException {
-        this(new ProblemSpec(inputFile), outputFile);
+    public OwnSimulator(String inputFile) throws IOException {
+        this(new ProblemSpec(inputFile));
     }
 
     /**

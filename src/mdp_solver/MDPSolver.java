@@ -24,13 +24,9 @@ public class MDPSolver {
 	
 	public MDPSolver(OwnSimulator sim, ProblemSpec ps, String outPutFileName) {
 		childNodes = new HashMap<>();
-		
 		this.sim = sim;
-		
 		this.ps = ps;
-		
 		level = ps.getLevel();
-		
 		actionSpace = generateActionSpace();
 		stepRecords = new ArrayList<>();
 		this.outPutFileName = outPutFileName;
@@ -93,15 +89,15 @@ public class MDPSolver {
 		
 	}
 	
-	
-	
+
 	
 	/**
 	 * Method that takes a state as input and add a list of all states possible to reach from that state as a child of that state.
 	 * @param parentState
 	 */
 	
-	public void MCTS(Node firstNode){
+	public void MCTS(){
+		Node firstNode = new Node(State.getStartState(ps.getFirstCarType(), ps.getFirstDriver(), ps.getFirstTireModel()), null, null, this);
 		List<Node> chosenNodes= new ArrayList<>();
 		chosenNodes.add(firstNode);
 		Node currentRootNode=firstNode;
