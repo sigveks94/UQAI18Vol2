@@ -2,7 +2,9 @@ package simulator;
 
 import problem.*;
 
-import java.io.IOException;
+import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * This class is the simulator for the problem.
@@ -19,25 +21,34 @@ public class Simulator {
     /** Whether to print progress messages or not
      * Feel free to change this if you don't want messages printed **/
     private boolean verbose = false;
+    /** A container to store steps for output **/
+    private List<Step> stepRecord;
+    /** path and name for output file **/
+    private String outputFile;
+
+
 
     /**
      * Construct a new simulator instance from the given problem spec
      *
      * @param ps the ProblemSpec
+     * @param outputFile the path for output file
      */
-    public Simulator(ProblemSpec ps) {
+    public Simulator(ProblemSpec ps, String outputFile) {
         this.ps = ps;
+        this.outputFile = outputFile;
         reset();
     }
 
     /**
      * Construct a new simulator instance from the given input file
      *
-     * @param fileName path to input file
+     * @param inputFile path to input file
+     * @param outputFile the path for output file
      * @throws IOException if can't find file or there is a format error
      */
-    public Simulator(String fileName) throws IOException {
-        this(new ProblemSpec(fileName));
+    public Simulator(String inputFile, String outputFile) throws IOException {
+        this(new ProblemSpec(inputFile), outputFile);
     }
 
     /**
@@ -49,6 +60,8 @@ public class Simulator {
         steps = 0;
         currentState = State.getStartState(ps.getFirstCarType(),
                 ps.getFirstDriver(), ps.getFirstTireModel());
+        stepRecord = new ArrayList<>();
+        stepRecord.add(new Step(-1, currentState.copyState(), null));
         if (verbose) {
             System.out.println("Resetting simulator");
             System.out.println("Start " + currentState.toString());
@@ -78,6 +91,7 @@ public class Simulator {
                 System.out.println("Max time steps exceeded: " + steps + " > "
                         + ps.getMaxT());
             }
+            outputSteps(false);
             return null;
         }
 
@@ -112,6 +126,21 @@ public class Simulator {
                 nextState = performA8(a);
         }
 
+        // add step to record for outputting
+        stepRecord.add(new Step(steps, nextState, a));
+
+        // handle slip and breakdown cases, we do this now so we can generate
+        // correct output format
+        if (nextState.isInSlipCondition()) {
+            // remain in same state but certain number of steps pass
+            // -1 since we add 1 later
+            steps += ps.getSlipRecoveryTime() - 1;
+            nextState = nextState.changeSlipCondition(false);
+        } else if (nextState.isInBreakdownCondition()) {
+            steps += ps.getRepairTime() - 1;
+            nextState = nextState.changeBreakdownCondition(false);
+        }
+
         steps += 1;
         currentState = nextState.copyState();
 
@@ -119,8 +148,11 @@ public class Simulator {
             System.out.println("\tNext " + nextState.toString());
         }
 
-        if (verbose && isGoalState(nextState)) {
-            System.out.println("Goal reached after " + steps + " steps.");
+        if (isGoalState(nextState)) {
+            if (verbose) {
+                System.out.println("Goal reached after " + steps + " steps.");
+            }
+            outputSteps(true);
         }
 
         return nextState;
@@ -145,13 +177,6 @@ public class Simulator {
 
         State nextState;
 
-        if (currentState.isInSlipCondition()) {
-            return currentState.reduceSlipTimeLeft();
-        }
-        if (currentState.isInBreakdownCondition()) {
-            return currentState.reduceBreakdownTimeLeft();
-        }
-
         // check there is enough fuel to make move in current state
         int fuelRequired = getFuelConsumption();
         int currentFuel = currentState.getFuel();
@@ -162,20 +187,17 @@ public class Simulator {
         // Sample move distance
         int moveDistance = sampleMoveDistance();
 
-        // handle slip and breakdown cases
+        // handle slip and breakdown cases, addition of steps handled in step method
         if (moveDistance == ProblemSpec.SLIP) {
             if (verbose) {
                 System.out.println("\tSampled move distance=SLIP");
             }
-            // remain in same state but certain number of steps pass
-            steps += ps.getSlipRecoveryTime();
-            nextState = currentState;
+            nextState = currentState.changeSlipCondition(true);
         } else if (moveDistance == ProblemSpec.BREAKDOWN) {
             if (verbose) {
                 System.out.println("\tSampled move distance=BREAKDOWN");
             }
-            steps += ps.getRepairTime();
-            nextState = currentState;
+            nextState = currentState.changeBreakdownCondition(true);
         } else {
             if (verbose) {
                 System.out.println("\tSampled move distance=" + moveDistance);
@@ -380,6 +402,13 @@ public class Simulator {
      * @return the next state
      */
     private State performA2(Action a) {
+
+        if (currentState.getCarType().equals(a.getCarType())) {
+            // changing to same car type does not change state but still costs a step
+            // no cheap refill here, muhahaha
+            return currentState;
+        }
+
         return currentState.changeCarType(a.getCarType());
     }
 
@@ -389,9 +418,7 @@ public class Simulator {
      * @param a a CHANGE_DRIVER action object
      * @return the next state
      */
-    private State performA3(Action a) {
-        return currentState.changeDriver(a.getDriverType());
-    }
+    private State performA3(Action a) { return currentState.changeDriver(a.getDriverType()); }
 
     /**
      * Perform the CHANGE_TIRES action
@@ -412,7 +439,7 @@ public class Simulator {
     private State performA5(Action a) {
         // calculate number of steps used for refueling (minus 1 since we add
         // 1 in main function
-        int stepsRequired = (int) Math.ceil(a.getFuel() / 10);
+        int stepsRequired = (int) Math.ceil(a.getFuel() / (float) 10);
         steps += (stepsRequired - 1);
         return currentState.addFuel(a.getFuel());
     }
@@ -434,6 +461,11 @@ public class Simulator {
      * @return the next state
      */
     private State performA7(Action a) {
+
+        if (currentState.getCarType().equals(a.getCarType())) {
+            // if car the same, only change driver so no sneaky fuel exploit
+            return currentState.changeDriver(a.getDriverType());
+        }
         return currentState.changeCarAndDriver(a.getCarType(),
                 a.getDriverType());
     }
@@ -461,9 +493,54 @@ public class Simulator {
         }
         return s.getPos() >= ps.getN();
     }
+
+    /**
+     * Get the current number of steps taken in latest simulation
+     *
+     * @return steps taken in latest simulation
+     */
+    public int getSteps() {
+        return steps;
+    }
+
+    /**
+     * Write the step record to the output file
+     *
+     * @param goalReached whether the goal was reached
+     */
+    private void outputSteps(boolean goalReached) {
+
+        System.out.println("Writing steps to output file");
+
+        try (BufferedWriter output = new BufferedWriter(new FileWriter(outputFile))) {
+
+            for (Step s: stepRecord) {
+                output.write(s.getOutputFormat());
+            }
+
+            if (goalReached) {
+                output.write("Goal reached, you bloody ripper!");
+            } else {
+                output.write("Computer says no. Max steps reached: max steps = " + ps.getMaxT());
+            }
+
+        } catch (IOException e) {
+            System.out.println("Error with output file");
+            System.out.println(e.getMessage());
+            System.out.println("Vomiting output to stdout instead");
+            for (Step s: stepRecord) {
+                System.out.print(s.getOutputFormat());
+            }
+
+            if (goalReached) {
+                System.out.println("Goal reached, you bloody ripper!");
+            } else {
+                System.out.println("Computer says no. Max steps reached: max steps = " + ps.getMaxT());
+            }
+        }
+    }
     
     public ProblemSpec getProblemSpec() {
     	return ps;
     }
-
 }

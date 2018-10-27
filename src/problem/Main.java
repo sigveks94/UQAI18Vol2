@@ -8,7 +8,7 @@ public class Main {
 
         ProblemSpec ps;
         try {
-            ps = new ProblemSpec("examples/level_1/input1.txt");
+            ps = new ProblemSpec("examples/level_1/input_lvl1.txt");
             System.out.println(ps.toString());
         } catch (IOException e) {
             System.out.println("IO Exception occurred");

@@ -17,6 +17,8 @@ public class Action {
     private int fuel;
     /** tire pressure change **/
     private TirePressure tirePressure;
+    /** String representation of action **/
+    private String text;
 
     /**
      * Constructor for the MOVE action
@@ -29,6 +31,7 @@ public class Action {
         } else {
             throw new IllegalArgumentException("Action type for this constructor must be MOVE");
         }
+        text = "A" + actionType.getActionNo();
     }
 
     /**
@@ -47,6 +50,8 @@ public class Action {
         } else {
             throw new IllegalArgumentException("Action type for this constructor must be CHANGE_CAR or CHANGE_DRIVER");
         }
+        text = "A" + actionType.getActionNo();
+        text += ":" + type;
     }
 
     /**
@@ -62,6 +67,8 @@ public class Action {
         } else {
             throw new IllegalArgumentException("Action type for this constructor must be CHANGE_TIRES");
         }
+        text = "A" + actionType.getActionNo();
+        text += ":" + tireModel.asString();
     }
 
     /**
@@ -80,6 +87,8 @@ public class Action {
         } else {
             throw new IllegalArgumentException("Action type for this constructor must be ADD_FUEL");
         }
+        text = "A" + actionType.getActionNo();
+        text += ":" + fuel;
     }
 
     /**
@@ -95,6 +104,8 @@ public class Action {
         } else {
             throw new IllegalArgumentException("Action type for this constructor must be CHANGE_PRESSURE");
         }
+        text = "A" + actionType.getActionNo();
+        text += ":" + tirePressure.asString();
     }
 
     /**
@@ -112,6 +123,8 @@ public class Action {
         } else {
             throw new IllegalArgumentException("Action type for this constructor must be CHANGE_CAR_AND_DRIVER");
         }
+        text = "A" + actionType.getActionNo();
+        text += ":" + carType + ":" + driverType;
     }
 
     /**
@@ -134,6 +147,8 @@ public class Action {
         } else {
             throw new IllegalArgumentException("Action type for this constructor must be CHANGE_TIRE_FUEL_PRESSURE");
         }
+        text = "A" + actionType.getActionNo();
+        text += ":" + tireModel.asString() + ":" + fuel + ":" + tirePressure.asString();
     }
 
     public ActionType getActionType() {
@@ -158,5 +173,9 @@ public class Action {
 
     public TirePressure getTirePressure() {
         return tirePressure;
+    }
+
+    public String getText() {
+        return text;
     }
 }

@@ -132,7 +132,7 @@ public class MDPSolver {
 			List<Node> nodes = new ArrayList<>();
 			for(Action action : actionSpace) {
 				State state = sim.step(action);
-				nodes.add(new Node(state, node, action));
+				nodes.add(new Node(state, node, action, this));
 			}
 			childNodes.put(node, nodes);
 		}
@@ -149,7 +149,7 @@ public class MDPSolver {
 			
 			State resultingState = sim.step(action);
 			
-			Node resultingNode = new Node(resultingState, node, action);
+			Node resultingNode = new Node(resultingState, node, action, this);
 			
 			node = resultingNode;
 			
@@ -198,8 +198,14 @@ public class MDPSolver {
         Random r = new Random();
         return r.nextInt((max - min)) + min;
     }
-
-	
+    
+    public int getSlipRecoveryTime() {
+    	return ps.getSlipRecoveryTime();
+    }
+    
+    public int getRepairTime() {
+    	return ps.getRepairTime();
+    }
 	
 	/*
 	 * THOUGTHS OF WHAT TO DO

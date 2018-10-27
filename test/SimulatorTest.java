@@ -1,5 +1,3 @@
-
-import org.junit.Assert;
 import org.junit.Test;
 import problem.*;
 import simulator.Simulator;
@@ -22,9 +20,11 @@ public class SimulatorTest {
     @Test
     public void randomActionTestLevel1() throws IOException {
         // using example file
-        String inputFile = "examples/level_1/input1.txt";
+        int level = 5;
+        String inputFile = "examples/level_" + level + "/input_lvl" + level + ".txt";
+        String outputFile = "examples/level_" + level + "/output_lvl" + level + ".txt";;
         ProblemSpec ps = new ProblemSpec(inputFile);
-        Simulator sim = new Simulator(ps);
+        Simulator sim = new Simulator(ps, outputFile);
         System.out.println(ps.toString());
 
         State state = sim.reset();

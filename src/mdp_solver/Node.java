@@ -22,10 +22,10 @@ public class Node {
 	private final static int M = 100000000; //Large number to represent infinity
 	private double UCB;
 	private Action action; //the predecessor´s action
+	private int timeUnits;
+	private MDPSolver mdp;
 	
-	private int timeUnits; 
-	
-	public Node(State currentState, Node parentNode, Action action) {
+	public Node(State currentState, Node parentNode, Action action, MDPSolver mdp) {
 		this.currentState = currentState;
 		this.parentNode = parentNode;
 		totVisits = 0;
@@ -33,6 +33,7 @@ public class Node {
 		UCB = 0;
 		setTimeUnits();
 		this.action = action;
+		this.mdp = mdp;
 		
 	}
 	
@@ -51,10 +52,10 @@ public class Node {
 		else {
 			timeUnits += parentNode.getTimeUnits() + 1;
 			if(currentState.isInSlipCondition()) {
-				timeUnits += ProblemSpec.getSlipRecoveryTime();
+				timeUnits += mdp.getSlipRecoveryTime();
 			}
 			if(currentState.isInBreakdownCondition()) {
-				timeUnits += ProblemSpec.getRepairTime();
+				timeUnits += mdp.getRepairTime();
 			}
 		}
 	}

@@ -34,9 +34,9 @@ public class ProblemSpec {
     /** Discount factor **/
     private double discountFactor;
     /** Time to recover from a slip **/
-    private static int slipRecoveryTime;
+    private int slipRecoveryTime;
     /** Breakdown repair time **/
-    private static int repairTime;
+    private int repairTime;
     /** The number of cells in map **/
     private int N;
     /** The maximum number of time-steps allowed for reaching goal **/
@@ -415,11 +415,11 @@ public class ProblemSpec {
         return discountFactor;
     }
 
-    public static int getSlipRecoveryTime() {
+    public int getSlipRecoveryTime() {
         return slipRecoveryTime;
     }
 
-    public static int getRepairTime() {
+    public int getRepairTime() {
         return repairTime;
     }
 
