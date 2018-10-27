@@ -1,5 +1,6 @@
 package mdp_solver;
 
+import java.io.File;
 import java.io.IOException;
 
 import problem.ProblemSpec;
@@ -22,8 +23,9 @@ public class Solution {
 	}
 	
 	public static void main(String[] args) throws IOException {
-		Solution solution = new Solution("input_lvl1.txt", "solution.txt");
-		
+		String filePath = new File("").getAbsolutePath() + "/";
+		Solution solution = new Solution(filePath + "input_lvl1.txt", filePath + "solution.txt");
+		solution.run();
 	}
 
 }
