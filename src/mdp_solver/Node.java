@@ -29,8 +29,8 @@ public class Node {
 		this.currentState = currentState;
 		this.parentNode = parentNode;
 		totVisits = 0;
-		value = M;
-		UCB = M;
+		value = 0;
+		UCB = 0;
 		setTimeUnits();
 		this.action = action;
 		
@@ -70,10 +70,15 @@ public class Node {
 	public double getValue() {
 		return value;
 	}
+	
+	public void updateStat(double value) {
+		setValue(value);
+		updateTotVisits();
+		updateUCB();
+	}
 
 	public void setValue(double value) {
 		this.value += value;
-		updateUCB();
 	}
 
 	public State getCurrentState() {
@@ -99,7 +104,7 @@ public class Node {
 	}
 	
 	public void setUCB() {
-		calculateUCB();
+		UCB= calculateUCB();
 	}
 	
 	public double getUCB() {

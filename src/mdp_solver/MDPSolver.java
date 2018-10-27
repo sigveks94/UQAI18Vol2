@@ -5,7 +5,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Random;
 
-import com.sun.org.apache.xalan.internal.xsltc.dom.CurrentNodeListFilter;
 
 import problem.*;
 import simulator.*;
@@ -47,8 +46,11 @@ public class MDPSolver {
 		actionSpace.addAll(generateCarActions(cars, availableActions.get(1)));
 		actionSpace.addAll(generateDriverActions(drivers, availableActions.get(2)));
 		actionSpace.addAll(generateTireActions(tires, availableActions.get(3)));
-		actionSpace.add(new Action(availableActions.get(4), 10)); //ONLY ONE FUEL ACTION AND THAT IS TO FILL 10 LITERS
-		actionSpace.addAll(generateTirePressureActions(TirePressure.FIFTY_PERCENT,TirePressure.SEVENTY_FIVE_PERCENT, TirePressure.ONE_HUNDRED_PERCENT, availableActions.get(5)));
+		if(ps.getLevel().getLevelNumber() > 1) {
+			actionSpace.add(new Action(availableActions.get(4), 10)); //ONLY ONE FUEL ACTION AND THAT IS TO FILL 10 LITERS
+			actionSpace.addAll(generateTirePressureActions(TirePressure.FIFTY_PERCENT,TirePressure.SEVENTY_FIVE_PERCENT, TirePressure.ONE_HUNDRED_PERCENT, availableActions.get(5)));
+		}
+		
 		return actionSpace;
 	}
 	
@@ -116,7 +118,7 @@ public class MDPSolver {
 		
 		// WHILE LOOP WITH EXIT CONDITION TIME = 13 
 		// INSIDE IS MCTSITERATION-ALGORITHM WHICH SELECTS, EXPANDS AND ROLLOUTS CONTINOUSLY
-		// THIS RESULTS IN ALL AFFECTED NODES´ VALUES AND VISITED-FREQUENCIES ARE UPDATED
+		// THIS RESULTS IN ALL AFFECTED NODESï¿½ VALUES AND VISITED-FREQUENCIES ARE UPDATED
 		// NEED TO CREATE A FUNCTION THAT SELECTS THE NEXT LEAFNODE WICH IS THE SUBJECT OF THE NEXT WHILE-LOOP (aka selectNextLeafNode(rootNode))
 		// SHOULD END WITH SETTING THE PARENT NODE OF STATE WE END UP IN AS NULL
 		
