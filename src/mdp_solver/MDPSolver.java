@@ -99,15 +99,15 @@ public class MDPSolver {
 		chosenNodes.add(firstNode);
 		Node currentRootNode=firstNode;
 		while(!sim.isGoalState(currentRootNode.getCurrentState())) {
-			currentRootNode = selectNextRoot(currentRootNode);
+			currentRootNode = MCTSIteration(currentRootNode);
 			chosenNodes.add(currentRootNode);
 		}
 		
-		//OUTPUT-FORMATTING AND TWEAKING
+		//OUTPUT-FORMATTING AND TWEAKING - ONLY NEED TO ITERATE THE CHOSENNODES-LIST AND EXTRACT THE INFORMATION FROM THE NODES
 		
 	}
 	
-	public Node selectNextRoot(Node node) {
+	public Node selectNextRootNode(Node node) {
 		//RETURNS THE NEXT SELECTED NODE OUT OF THE OPTIONS THAT HAS THE BEST UCB-SCORE
 		return null;
 	}
@@ -116,11 +116,11 @@ public class MDPSolver {
 		
 		// WHILE LOOP WITH EXIT CONDITION TIME = 13 
 		// INSIDE IS MCTSITERATION-ALGORITHM WHICH SELECTS, EXPANDS AND ROLLOUTS CONTINOUSLY
-		// THIS RESULTS IN ALL AFFECTED NODESÂ´ VALUES AND VISITED-FREQUENCIES ARE UPDATED
+		// THIS RESULTS IN ALL AFFECTED NODES´ VALUES AND VISITED-FREQUENCIES ARE UPDATED
+		// NEED TO CREATE A FUNCTION THAT SELECTS THE NEXT LEAFNODE WICH IS THE SUBJECT OF THE NEXT WHILE-LOOP (aka selectNextLeafNode(rootNode))
+		// SHOULD END WITH SETTING THE PARENT NODE OF STATE WE END UP IN AS NULL
 		
-		//SHOULD END WITH SETTING THE PARENT NODE OF STATE WE END UP IN AS NULL
-		
-		return rootNode;
+		return selectNextRootNode(rootNode);
 	}
 	
 	
