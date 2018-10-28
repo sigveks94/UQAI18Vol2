@@ -18,7 +18,7 @@ public class OwnSimulator {
     /** The current state of the environment **/
     private State currentState;
     /** The number of steps taken **/
-    private int steps;
+    //private int steps;
     /** Whether to print progress messages or not
      * Feel free to change this if you don't want messages printed **/
     private boolean verbose = false;
@@ -56,7 +56,7 @@ public class OwnSimulator {
      * @return the start state
      */
     public State reset() {
-        steps = 0;
+        //steps = 0;
         currentState = State.getStartState(ps.getFirstCarType(),
                 ps.getFirstDriver(), ps.getFirstTireModel());
         stepRecord = new ArrayList<>();
@@ -85,18 +85,18 @@ public class OwnSimulator {
                     + ps.getLevel());
         }
 
-        if (steps > ps.getMaxT()) {
-            if (verbose) {
-                System.out.println("Max time steps exceeded: " + steps + " > "
-                        + ps.getMaxT());
-            }
-            return null;
-        }
+        //if (steps > ps.getMaxT()) {
+          //  if (verbose) {
+            //    System.out.println("Max time steps exceeded: " + steps + " > "
+              //          + ps.getMaxT());
+            //}
+            //return null;
+        //}
 
-        if (verbose) {
-            System.out.println("Step " + steps +": performing A"
-                    + a.getActionType().getActionNo());
-        }
+//        if (verbose) {
+//            System.out.println("Step " + steps +": performing A"
+//                    + a.getActionType().getActionNo());
+//        }
 
         switch(a.getActionType().getActionNo()) {
             case 1:
@@ -129,14 +129,14 @@ public class OwnSimulator {
         if (nextState.isInSlipCondition()) {
             // remain in same state but certain number of steps pass
             // -1 since we add 1 later
-            steps += ps.getSlipRecoveryTime() - 1;
+//            steps += ps.getSlipRecoveryTime() - 1;
             nextState = nextState.changeSlipCondition(false);
         } else if (nextState.isInBreakdownCondition()) {
-            steps += ps.getRepairTime() - 1;
+//            steps += ps.getRepairTime() - 1;
             nextState = nextState.changeBreakdownCondition(false);
         }
 
-        steps += 1;
+//        steps += 1;
         currentState = nextState.copyState();
 
         if (verbose) {
@@ -145,7 +145,7 @@ public class OwnSimulator {
 
         if (isGoalState(nextState)) {
             if (verbose) {
-                System.out.println("Goal reached after " + steps + " steps.");
+//                System.out.println("Goal reached after " + steps + " steps.");
             }
         }
 
@@ -434,7 +434,7 @@ public class OwnSimulator {
         // calculate number of steps used for refueling (minus 1 since we add
         // 1 in main function
         int stepsRequired = (int) Math.ceil(a.getFuel() / (float) 10);
-        steps += (stepsRequired - 1);
+//        steps += (stepsRequired - 1);
         return currentState.addFuel(a.getFuel());
     }
 
@@ -493,9 +493,9 @@ public class OwnSimulator {
      *
      * @return steps taken in latest simulation
      */
-    public int getSteps() {
-        return steps;
-    }
+//    public int getSteps() {
+//        return steps;
+//    }
 
     
 }

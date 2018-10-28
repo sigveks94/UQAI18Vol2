@@ -152,6 +152,7 @@ public class MDPSolver {
 			}
 			currentNode = selectNextLeafNode(rootNode);
 		}
+		System.out.println(rootNode);
 		return selectNextRootNode(rootNode);
 	}
 	
