@@ -16,14 +16,13 @@ public class OwnSimulator {
     /** Problem spec for the current problem **/
     private ProblemSpec ps;
     /** The current state of the environment **/
-    private State currentState;
     /** The number of steps taken **/
-    //private int steps;
     /** Whether to print progress messages or not
      * Feel free to change this if you don't want messages printed **/
     private boolean verbose = false;
     /** A container to store steps for output **/
     private List<Step> stepRecord;
+    private MDPSolver mdp;
 
 
 
@@ -33,9 +32,10 @@ public class OwnSimulator {
      * @param ps the ProblemSpec
      * @param outputFile the path for output file
      */
-    public OwnSimulator(ProblemSpec ps) {
+    public OwnSimulator(ProblemSpec ps, MDPSolver mdp) {
         this.ps = ps;
-        reset();
+        this.mdp = mdp;
+//        reset();
     }
     
 
@@ -46,27 +46,27 @@ public class OwnSimulator {
      * @param outputFile the path for output file
      * @throws IOException if can't find file or there is a format error
      */
-    public OwnSimulator(String inputFile) throws IOException {
-        this(new ProblemSpec(inputFile));
-    }
+//    public OwnSimulator(String inputFile, MDPSolver mdp) throws IOException {
+//        this(new ProblemSpec(inputFile), mdp);
+//    }
 
     /**
      * Reset the simulator and return initial state
      *
      * @return the start state
      */
-    public State reset() {
-        //steps = 0;
-        currentState = State.getStartState(ps.getFirstCarType(),
-                ps.getFirstDriver(), ps.getFirstTireModel());
-        stepRecord = new ArrayList<>();
-        stepRecord.add(new Step(-1, currentState.copyState(), null));
-        if (verbose) {
-            System.out.println("Resetting simulator");
-            System.out.println("Start " + currentState.toString());
-        }
-        return currentState.copyState();
-    }
+//    public State reset() {
+//        //steps = 0;
+//        currentState = State.getStartState(ps.getFirstCarType(),
+//                ps.getFirstDriver(), ps.getFirstTireModel());
+//        stepRecord = new ArrayList<>();
+//        stepRecord.add(new Step(-1, currentState.copyState(), null));
+//        if (verbose) {
+//            System.out.println("Resetting simulator");
+//            System.out.println("Start " + currentState.toString());
+//        }
+//        return currentState.copyState();
+//    }
 
     /**
      * Perform an action against environment and receive the next state.
@@ -74,7 +74,7 @@ public class OwnSimulator {
      * @param a the action to perform
      * @return the next state or null if max time steps exceeded for problem
      */
-    public State step(Action a) throws IllegalArgumentException {
+    public Node step(Action a, Node node) throws IllegalArgumentException {
 
         State nextState;
 
@@ -100,56 +100,33 @@ public class OwnSimulator {
 
         switch(a.getActionType().getActionNo()) {
             case 1:
-                nextState = performA1();
+                nextState = performA1(node);
                 break;
             case 2:
-                nextState = performA2(a);
+                nextState = performA2(a, node);
                 break;
             case 3:
-                nextState = performA3(a);
+                nextState = performA3(a, node);
                 break;
             case 4:
-                nextState = performA4(a);
+                nextState = performA4(a, node);
                 break;
             case 5:
-                nextState = performA5(a);
+                nextState = performA5(a, node);
                 break;
             case 6:
-                nextState = performA6(a);
+                nextState = performA6(a, node);
                 break;
-            case 7:
-                nextState = performA7(a);
-                break;
+//            case 7:
+//                nextState = performA7(a);
+//                break;
             default:
-                nextState = performA8(a);
+                nextState = node.getNodeState();
         }
+       Node nextNode = new Node(nextState, node, a, mdp);
+        
 
-        // handle slip and breakdown cases, we do this now so we can generate
-        // correct output format
-        if (nextState.isInSlipCondition()) {
-            // remain in same state but certain number of steps pass
-            // -1 since we add 1 later
-//            steps += ps.getSlipRecoveryTime() - 1;
-            nextState = nextState.changeSlipCondition(false);
-        } else if (nextState.isInBreakdownCondition()) {
-//            steps += ps.getRepairTime() - 1;
-            nextState = nextState.changeBreakdownCondition(false);
-        }
-
-//        steps += 1;
-        currentState = nextState.copyState();
-
-        if (verbose) {
-            System.out.println("\tNext " + nextState.toString());
-        }
-
-        if (isGoalState(nextState)) {
-            if (verbose) {
-//                System.out.println("Goal reached after " + steps + " steps.");
-            }
-        }
-
-        return nextState;
+       return nextNode;
     }
 
     /**
@@ -167,36 +144,36 @@ public class OwnSimulator {
      *
      * @return the next state
      */
-    private State performA1() {
+    private State performA1(Node node) {
 
         State nextState;
 
         // check there is enough fuel to make move in current state
-        int fuelRequired = getFuelConsumption();
-        int currentFuel = currentState.getFuel();
+        int fuelRequired = getFuelConsumption(node);
+        int currentFuel = node.getNodeState().getFuel();
         if (fuelRequired > currentFuel) {
-            return currentState;
+            return node.getNodeState();
         }
 
         // Sample move distance
-        int moveDistance = sampleMoveDistance();
+        int moveDistance = sampleMoveDistance(node);
 
         // handle slip and breakdown cases, addition of steps handled in step method
         if (moveDistance == ProblemSpec.SLIP) {
             if (verbose) {
                 System.out.println("\tSampled move distance=SLIP");
             }
-            nextState = currentState.changeSlipCondition(true);
+            nextState = node.getNodeState().changeSlipCondition(true);
         } else if (moveDistance == ProblemSpec.BREAKDOWN) {
             if (verbose) {
                 System.out.println("\tSampled move distance=BREAKDOWN");
             }
-            nextState = currentState.changeBreakdownCondition(true);
+            nextState = node.getNodeState().changeBreakdownCondition(true);
         } else {
             if (verbose) {
                 System.out.println("\tSampled move distance=" + moveDistance);
             }
-            nextState = currentState.changePosition(moveDistance, ps.getN());
+            nextState = node.getNodeState().changePosition(moveDistance, ps.getN());
         }
 
         // handle fuel usage for level 2 and above
@@ -216,9 +193,9 @@ public class OwnSimulator {
      *
      * @return the move distance in range [-4, 5] or SLIP or BREAKDOWN
      */
-    private int sampleMoveDistance() {
+    private int sampleMoveDistance(Node node) {
 
-        double[] moveProbs = getMoveProbs();
+        double[] moveProbs = getMoveProbs(node);
 
         double p = Math.random();
         double pSum = 0;
@@ -240,14 +217,14 @@ public class OwnSimulator {
      *
      * @return list of move probabilities
      */
-    private double[] getMoveProbs() {
+    public double[] getMoveProbs(Node node) {
 
         // get parameters of current state
-        Terrain terrain = ps.getEnvironmentMap()[currentState.getPos() - 1];
+        Terrain terrain = ps.getEnvironmentMap()[node.getNodeState().getPos() - 1];
         int terrainIndex = ps.getTerrainIndex(terrain);
-        String car = currentState.getCarType();
-        String driver = currentState.getDriver();
-        Tire tire = currentState.getTireModel();
+        String car = node.getNodeState().getCarType();
+        String driver = node.getNodeState().getDriver();
+        Tire tire = node.getNodeState().getTireModel();
 
         // calculate priors
         double priorK = 1.0 / ProblemSpec.CAR_MOVE_RANGE;
@@ -262,7 +239,7 @@ public class OwnSimulator {
         double[] pKGivenDriver = ps.getDriverMoveProbability().get(driver);
         double[] pKGivenTire = ps.getTireModelMoveProbability().get(tire);
         double pSlipGivenTerrain = ps.getSlipProbability()[terrainIndex];
-        double[] pKGivenPressureTerrain = convertSlipProbs(pSlipGivenTerrain);
+        double[] pKGivenPressureTerrain = convertSlipProbs(pSlipGivenTerrain, node);
 
         // use bayes rule to get probability of parameter given k
         double[] pCarGivenK = bayesRule(pKGivenCar, priorCar, priorK);
@@ -300,10 +277,10 @@ public class OwnSimulator {
      *                 tire pressure
      * @return list of move probabilities given current terrain and pressure
      */
-    private double[] convertSlipProbs(double slipProb) {
+    private double[] convertSlipProbs(double slipProb, Node node) {
 
         // Adjust slip probability based on tire pressure
-        TirePressure pressure = currentState.getTirePressure();
+        TirePressure pressure = node.getNodeState().getTirePressure();
         if (pressure == TirePressure.SEVENTY_FIVE_PERCENT) {
             slipProb *= 2;
         } else if (pressure == TirePressure.ONE_HUNDRED_PERCENT) {
@@ -369,12 +346,12 @@ public class OwnSimulator {
      *
      * @return move fuel consumption for current state
      */
-    private int getFuelConsumption() {
+    private int getFuelConsumption(Node node) {
 
         // get parameters of current state
-        Terrain terrain = ps.getEnvironmentMap()[currentState.getPos() - 1];
-        String car = currentState.getCarType();
-        TirePressure pressure = currentState.getTirePressure();
+        Terrain terrain = ps.getEnvironmentMap()[node.getNodeState().getPos() - 1];
+        String car = node.getNodeState().getCarType();
+        TirePressure pressure = node.getNodeState().getTirePressure();
 
         // get fuel consumption
         int terrainIndex = ps.getTerrainIndex(terrain);
@@ -395,15 +372,15 @@ public class OwnSimulator {
      * @param a a CHANGE_CAR action object
      * @return the next state
      */
-    private State performA2(Action a) {
+    private State performA2(Action a, Node node) {
 
-        if (currentState.getCarType().equals(a.getCarType())) {
+        if (node.getNodeState().getCarType().equals(a.getCarType())) {
             // changing to same car type does not change state but still costs a step
             // no cheap refill here, muhahaha
-            return currentState;
+            return node.getNodeState();
         }
 
-        return currentState.changeCarType(a.getCarType());
+        return node.getNodeState().changeCarType(a.getCarType());
     }
 
     /**
@@ -412,7 +389,7 @@ public class OwnSimulator {
      * @param a a CHANGE_DRIVER action object
      * @return the next state
      */
-    private State performA3(Action a) { return currentState.changeDriver(a.getDriverType()); }
+    private State performA3(Action a, Node node) { return node.getNodeState().changeDriver(a.getDriverType()); }
 
     /**
      * Perform the CHANGE_TIRES action
@@ -420,8 +397,8 @@ public class OwnSimulator {
      * @param a a CHANGE_TIRES action object
      * @return the next state
      */
-    private State performA4(Action a) {
-        return currentState.changeTires(a.getTireModel());
+    private State performA4(Action a, Node node) {
+        return node.getNodeState().changeTires(a.getTireModel());
     }
 
     /**
@@ -430,12 +407,12 @@ public class OwnSimulator {
      * @param a a ADD_FUEL action object
      * @return the next state
      */
-    private State performA5(Action a) {
+    private State performA5(Action a, Node node) {
         // calculate number of steps used for refueling (minus 1 since we add
         // 1 in main function
-        int stepsRequired = (int) Math.ceil(a.getFuel() / (float) 10);
-//        steps += (stepsRequired - 1);
-        return currentState.addFuel(a.getFuel());
+        //int stepsRequired = (int) Math.ceil(a.getFuel() / (float) 10);
+    	// steps += (stepsRequired - 1);
+        return node.getNodeState().addFuel(a.getFuel());
     }
 
     /**
@@ -444,8 +421,8 @@ public class OwnSimulator {
      * @param a a CHANGE_PRESSURE action object
      * @return the next state
      */
-    private State performA6(Action a) {
-        return currentState.changeTirePressure(a.getTirePressure());
+    private State performA6(Action a, Node node) {
+        return node.getNodeState().changeTirePressure(a.getTirePressure());
     }
 
     /**
@@ -454,15 +431,15 @@ public class OwnSimulator {
      * @param a a CHANGE_CAR_AND_DRIVER action object
      * @return the next state
      */
-    private State performA7(Action a) {
-
-        if (currentState.getCarType().equals(a.getCarType())) {
-            // if car the same, only change driver so no sneaky fuel exploit
-            return currentState.changeDriver(a.getDriverType());
-        }
-        return currentState.changeCarAndDriver(a.getCarType(),
-                a.getDriverType());
-    }
+//    private State performA7(Action a) {
+//
+//        if (currentState.getCarType().equals(a.getCarType())) {
+//            // if car the same, only change driver so no sneaky fuel exploit
+//            return currentState.changeDriver(a.getDriverType());
+//        }
+//        return currentState.changeCarAndDriver(a.getCarType(),
+//                a.getDriverType());
+//    }
 
     /**
      * Perform the CHANGE_TIRE_FUEL_PRESSURE action
@@ -470,10 +447,10 @@ public class OwnSimulator {
      * @param a a CHANGE_TIRE_FUEL_PRESSURE action object
      * @return the next state
      */
-    private State performA8(Action a) {
-        return currentState.changeTireFuelAndTirePressure(a.getTireModel(),
-                a.getFuel(), a.getTirePressure());
-    }
+//    private State performA8(Action a) {
+//        return currentState.changeTireFuelAndTirePressure(a.getTireModel(),
+//                a.getFuel(), a.getTirePressure());
+//    }
 
     /**
      * Check whether a given state is the goal state or not
@@ -481,11 +458,17 @@ public class OwnSimulator {
      * @param s the state to check
      * @return True if s is goal state, False otherwise
      */
-    public Boolean isGoalState(State s) {
-        if (s == null) {
+    public Boolean isGoalNode(Node n) {
+    	
+    	if(n instanceof A1Node) {
+    		System.out.println("A1 is not a goal node");
+    		return false;
+    	}
+    	
+        if (n == null) {
             return false;
         }
-        return s.getPos() >= ps.getN();
+        return n.getNodeState().getPos() >= ps.getN();
     }
 
     /**

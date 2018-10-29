@@ -7,24 +7,21 @@ import problem.ProblemSpec;
 
 public class Solution {
 	
-	
 	private MDPSolver mdpSolver;
 	private ProblemSpec ps;
-	private OwnSimulator sim;
 	
 	public Solution(String inputFile, String outputFile) throws IOException {
 		ps = new ProblemSpec(inputFile);
-		sim = new OwnSimulator(ps);
-		mdpSolver = new MDPSolver(sim, ps, outputFile);
+		mdpSolver = new MDPSolver(ps, outputFile);
 	}
 	
 	public void run() {
-		mdpSolver.MCTS();
+		mdpSolver.solve();
 	}
 	
 	public static void main(String[] args) throws IOException {
 		String filePath = new File("").getAbsolutePath() + "/";
-		Solution solution = new Solution(filePath + "input_lvl1.txt", filePath + "solution.txt");
+		Solution solution = new Solution(filePath + "input_lvl2.txt", filePath + "solution.txt");
 		solution.run();
 	}
 
