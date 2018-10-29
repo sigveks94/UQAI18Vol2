@@ -24,16 +24,24 @@ public class Node {
 	protected Action action; //the predecessor´s action
 	protected int timeUnits;
 	protected MDPSolver mdp;
+	protected boolean isSubNode;
+	protected A1Node A1node;
 	
-	public Node(State nodeState, Node parentNode, Action action, MDPSolver mdp) {
+	public Node(State nodeState, Node parentNode, Action action, MDPSolver mdp, boolean isSubNode, A1Node a1node) {
 		this.nodeState = nodeState;
 		this.parentNode = parentNode;
 		totVisits = 0;
 		value = 0;
-		UCB = 0;
+		UCB = M;
 		this.action = action;
 		this.mdp = mdp;
+		this.isSubNode = isSubNode;
+		this.A1node = a1node;
 		setTimeUnits();
+	}
+	
+	public A1Node getA1Node() {
+		return A1node;
 	}
 	
 	public Action getAction() {
@@ -42,6 +50,10 @@ public class Node {
 	
 	public int getTimeUnits() {
 		return timeUnits;
+	}
+	
+	public boolean isSubNode() {
+		return isSubNode;
 	}
 	
 	public void setTimeUnits() {

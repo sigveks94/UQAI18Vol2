@@ -21,7 +21,6 @@ public class OwnSimulator {
      * Feel free to change this if you don't want messages printed **/
     private boolean verbose = false;
     /** A container to store steps for output **/
-    private List<Step> stepRecord;
     private MDPSolver mdp;
 
 
@@ -123,9 +122,9 @@ public class OwnSimulator {
             default:
                 nextState = node.getNodeState();
         }
-       Node nextNode = new Node(nextState, node, a, mdp);
-        
-
+       
+       Node nextNode = new Node(nextState, node, a, mdp, false, null);
+  
        return nextNode;
     }
 

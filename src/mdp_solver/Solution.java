@@ -24,5 +24,4 @@ public class Solution {
 		Solution solution = new Solution(filePath + "input_lvl2.txt", filePath + "solution.txt");
 		solution.run();
 	}
-
 }

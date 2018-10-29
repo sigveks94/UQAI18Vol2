@@ -50,6 +50,9 @@ public class MCTS {
 				rollout(nodeToRollout);
 			}
 		}
+		for(Node n : childNodes.get(rootNode)) {
+			System.out.println(n.getUCB());
+		}
 		return selectBestAction(rootNode);
 	}
 	
@@ -104,7 +107,7 @@ public class MCTS {
 					else 
 					{
 						Node resultNode = ownSim.step(action, node);
-						nodes.add(new Node(resultNode.getNodeState(), node, action, mdp));
+						nodes.add(resultNode);
 					}
 				}
 				childNodes.put(node, nodes);
@@ -116,17 +119,18 @@ public class MCTS {
 		
 		if(!(node instanceof A1Node)) {
 			double timeSpent = node.getTimeUnits();
-			double timeAllowed = ps.getMaxT();
+			double timeAllowed = 100; //ps.getMaxT();
+			Node dummyNode = node;
 			
-			while(!(timeSpent >= timeAllowed || ownSim.isGoalNode(node))) {
-				
-				Action action = actionSpace.get(aRandomInt(0, actionSpace.size()));
-				Node resultingNode = ownSim.step(action, node);
-				node = resultingNode;
-				timeSpent = node.getTimeUnits()+1;
+			while(!(timeSpent >= timeAllowed || ownSim.isGoalNode(dummyNode))) {
+				int number = aRandomInt(0,6); //QUICK FIX HEURISTIC
+				Action action = (number == 0) ? actionSpace.get(0) : actionSpace.get(aRandomInt(1,actionSpace.size())); //actionSpace.get(aRandomInt(0, actionSpace.size()));
+				Node resultingNode = ownSim.step(action, dummyNode);
+				dummyNode = resultingNode;
+				timeSpent = dummyNode.getTimeUnits()+1;
 			}
 			
-			double reward = calculateReward(node);
+			double reward = calculateReward(dummyNode);
 			//System.out.println(reward);
 			
 			backPropagate(node, reward);
@@ -139,20 +143,24 @@ public class MCTS {
 	}
 	
 	private void rolloutA1(A1Node a1Node) {
+		
 		for(Node node : a1Node.getOutcomeNodes()) {
 			double timeSpent = node.getTimeUnits();
-			double timeAllowed = ps.getMaxT();
+			double timeAllowed = 100; //ps.getMaxT();
+			Node dummyNode = node;
 			
-			while(!(timeSpent >= timeAllowed || ownSim.isGoalNode(node))) {
-				Action action = actionSpace.get(aRandomInt(0, actionSpace.size()));
-				Node resultingNode = ownSim.step(action, node);
-				node = resultingNode;
-				timeSpent += node.getTimeUnits();
+			while(!(timeSpent >= timeAllowed || ownSim.isGoalNode(dummyNode))) {
+				int number = aRandomInt(0,6); //QUICK FIX HEURISTIC
+				Action action = (number == 0) ? actionSpace.get(0) : actionSpace.get(aRandomInt(1,actionSpace.size()));  //actionSpace.get(aRandomInt(0, actionSpace.size()));
+				Node resultingNode = ownSim.step(action, dummyNode);
+				dummyNode = resultingNode;
+				timeSpent = dummyNode.getTimeUnits()+1;
 			}
-			node.setValue(calculateReward(node));
+			node.setValue(calculateReward(dummyNode));
 		}
 		
-		backPropagate(a1Node, a1Node.getValue());
+		double reward = a1Node.updateValue();
+		backPropagate(a1Node, reward);
 	}
 
 	
@@ -173,11 +181,23 @@ public class MCTS {
 	}
 	
 	public void backPropagate(Node node, double reward) {
-		while(node.getParentNode() != null) {
+		
+		if(node.getParentNode() == null) {
 			node.updateStat(reward);
-			node = node.getParentNode();
+			return;
 		}
-		node.updateStat(reward);
+		else if(node.isSubNode()) {
+			node.updateStat(reward);
+			A1Node superNode = node.getA1Node();
+			superNode.updateA1Node();
+			backPropagate(superNode.getParentNode(), reward);
+			
+		}
+		else {
+			node.updateStat(reward);
+			backPropagate(node.getParentNode(), reward);
+		}
+		
 	}
 	
 	/** I'm a helper method */

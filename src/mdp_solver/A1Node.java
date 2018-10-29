@@ -13,17 +13,24 @@ public class A1Node extends Node {
 	double[] moveProbs;
 
 	public A1Node(State nodeState, Node parentNode, Action action, MDPSolver mdp, double[] moveProbs) {
-		super(nodeState, parentNode, action, mdp);
+		super(nodeState, parentNode, action, mdp, false, null);
 		generateOutcomeNodes();
 		this.moveProbs = moveProbs;
 	}
 	
-	public double getValue() {
+	public void updateA1Node() {
+		updateValue();
+		this.totVisits += 1;
+		updateUCB();
+	}
+	
+	public double updateValue() {
 		double value = 0;
 		for(int i = 0; i < outcomeNodes.size(); i++) {
 			value += outcomeNodes.get(i).getValue() * moveProbs[i];
 		}
-		return value;
+		this.value=value;
+		return this.value;
 	}
 	
 	public List<Node> getOutcomeNodes(){
@@ -41,7 +48,7 @@ public class A1Node extends Node {
 		for(int i = -4; i < 6; i++) {
 			State dummyState = nodeState;
 			State subNodeState = dummyState.changePosition(i, mdp.getProblemSpec().getN());
-			outcomeNodes.add(new Node(subNodeState, parentNode, action, mdp));
+			outcomeNodes.add(new Node(subNodeState, parentNode, action, mdp, true, this));
 		}
 		State slipState = nodeState;
 		State breakState = nodeState;
@@ -49,8 +56,8 @@ public class A1Node extends Node {
 		slipState = slipState.changeSlipCondition(true);
 		breakState = breakState.changeBreakdownCondition(true);
 		
-		outcomeNodes.add(new Node(slipState, parentNode, action, mdp));
-		outcomeNodes.add(new Node(breakState, parentNode, action, mdp));
+		outcomeNodes.add(new Node(slipState, parentNode, action, mdp, true, this));
+		outcomeNodes.add(new Node(breakState, parentNode, action, mdp, true, this));
 		
 	}
 	

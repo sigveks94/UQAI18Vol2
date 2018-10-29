@@ -92,7 +92,7 @@ public class MDPSolver {
 	
 	public void solve(){
 		sim.reset();
-		Node currentRootNode = new Node(State.getStartState(ps.getFirstCarType(), ps.getFirstDriver(), ps.getFirstTireModel()), null, null, this);
+		Node currentRootNode = new Node(State.getStartState(ps.getFirstCarType(), ps.getFirstDriver(), ps.getFirstTireModel()), null, null, this, false, null);
 		int max = ps.getMaxT();
 		while(actionCounter < max) {
 			MCTS iteration = new MCTS(ps, actionSpace,this, currentRootNode);
@@ -104,7 +104,9 @@ public class MDPSolver {
 			if(resultState == null) {
 				break;
 			}
-			currentRootNode = new Node(resultState, currentRootNode, a, this);
+			System.out.println(resultState);
+			System.out.println(a.getText());
+			currentRootNode = new Node(resultState, currentRootNode, a, this, false, null);
 		}		
 	}
 	
