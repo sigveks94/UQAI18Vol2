@@ -20,17 +20,29 @@ public class A1Node extends Node {
 	
 	public void updateA1Node() {
 		updateValue();
-		this.totVisits += 1;
+		updateA1Visits();
 		updateUCB();
 	}
 	
+	private void updateA1Visits() {
+		double visits = 0;
+		for(int i = 0; i < outcomeNodes.size(); i++) {
+			visits += outcomeNodes.get(i).getTotVisits() * moveProbs[i];
+		}
+		this.totVisits = (int) visits;
+	}
+
 	public double updateValue() {
 		double value = 0;
 		for(int i = 0; i < outcomeNodes.size(); i++) {
 			value += outcomeNodes.get(i).getValue() * moveProbs[i];
 		}
-		this.value=value;
+		this.value = value;
 		return this.value;
+	}
+	
+	public double[] getMoveProbs() {
+		return moveProbs;
 	}
 	
 	public List<Node> getOutcomeNodes(){

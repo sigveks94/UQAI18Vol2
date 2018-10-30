@@ -18,7 +18,7 @@ public class Node {
 	protected Node parentNode;
 	protected int totVisits;
 	protected double value;
-	protected final static int C = 2; //The discountfactor to be used in UpperConfidenceBound 
+	protected final static double C = Math.sqrt(5); //The discountfactor to be used in UpperConfidenceBound 
 	protected final static int M = 100000000; //Large number to represent infinity
 	protected double UCB;
 	protected Action action; //the predecessor´s action
@@ -54,6 +54,10 @@ public class Node {
 	
 	public boolean isSubNode() {
 		return isSubNode;
+	}
+	
+	public double getAvgValue() {
+		return this.value/this.totVisits;
 	}
 	
 	public void setTimeUnits() {

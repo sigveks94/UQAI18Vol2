@@ -17,6 +17,7 @@ public class MCTS {
 	private List<Action> actionSpace;
 	private MDPSolver mdp;
 	private Node rootNode;
+	//private int iterations;
 	
 	
 	public MCTS(ProblemSpec ps, List<Action> actionSpace, MDPSolver mdp, Node rootNode) {
@@ -26,6 +27,7 @@ public class MCTS {
 		this.mdp = mdp;
 		ownSim = new OwnSimulator(ps, mdp);
 		this.rootNode = rootNode;
+		//iterations = 0;
 	}
 	
 	//DETTE ER EN ITERASJON
@@ -36,8 +38,9 @@ public class MCTS {
 		final long startTime = System.currentTimeMillis();
 		
 		//DETTE ER EN MINI-ITERASJON
-		while(System.currentTimeMillis() - startTime < 14500) {
+		while((System.currentTimeMillis() - startTime < 14500)) { //&& iterations < 100000) {
 			Node currentNode = rootNode;
+			//iterations++;
 			
 			while(childNodes.containsKey(currentNode)) {
 				currentNode = selectNode(currentNode);
@@ -50,11 +53,21 @@ public class MCTS {
 				rollout(nodeToRollout);
 			}
 		}
-		for(Node n : childNodes.get(rootNode)) {
-			System.out.println(n.getUCB());
-		}
+//		for(Node n : childNodes.get(rootNode)) {
+//			if(n instanceof A1Node) {
+//				System.out.println(n.getAvgValue());
+//				List<Node> outComeNodes = ((A1Node) n).getOutcomeNodes();
+//				for(int i = 0; i < ((A1Node) n).getOutcomeNodes().size(); i++) {
+//					System.out.println(outComeNodes.get(i).getAvgValue() + " |||| " + ((A1Node) n).getMoveProbs()[i]);
+//				}
+//			}
+//			else {
+//				System.out.println(n.getAvgValue());
+//			}
+//		}
+		
 		return selectBestAction(rootNode);
-	}
+		}
 	
 
 	//RETURNS THE BEST ACTION OUT OF THE OPTIONS THAT HAS THE BEST VALUE-SCORE
@@ -64,9 +77,9 @@ public class MCTS {
 		double bestValue = -1;
 		Node bestNode = null;
 		for(Node child : children) {
-			if(child.getValue() > bestValue) {
+			if(child.getAvgValue() > bestValue) {
 				bestNode = child;
-				bestValue = child.getValue();
+				bestValue = child.getAvgValue();
 			}
 		}
 		return bestNode.getAction();
@@ -90,11 +103,11 @@ public class MCTS {
 	public Node expand(Node node){
 		if(node instanceof A1Node) {
 			List<Node> subNodes = ((A1Node) node).getOutcomeNodes();
-			List<A1Node> callStack = new ArrayList<>();
+			Node firstNode = subNodes.get(0);
 			for (Node subNode : subNodes) {
-				callStack.add((A1Node) expand(subNode));
+				expand(subNode);
 			}
-			return callStack.get(0);
+			return firstNode;
 		}
 			else {
 				List<Node> nodes = new ArrayList<>();
@@ -131,7 +144,7 @@ public class MCTS {
 			}
 			
 			double reward = calculateReward(dummyNode);
-			//System.out.println(reward);
+			
 			
 			backPropagate(node, reward);
 		}
@@ -156,11 +169,12 @@ public class MCTS {
 				dummyNode = resultingNode;
 				timeSpent = dummyNode.getTimeUnits()+1;
 			}
-			node.setValue(calculateReward(dummyNode));
+			node.updateStat(calculateReward(dummyNode));
 		}
 		
-		double reward = a1Node.updateValue();
-		backPropagate(a1Node, reward);
+		a1Node.updateA1Node();
+		double reward = a1Node.getValue();
+		backPropagate(a1Node.getParentNode(), reward);
 	}
 
 	

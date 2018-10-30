@@ -105,7 +105,7 @@ public class MDPSolver {
 				break;
 			}
 			System.out.println(resultState);
-			System.out.println(a.getText());
+			System.out.println(a.getText() + "\n");
 			currentRootNode = new Node(resultState, currentRootNode, a, this, false, null);
 		}		
 	}
