@@ -46,7 +46,21 @@ public class MDPSolver {
 			actionSpace.addAll(generateTirePressureActions(TirePressure.FIFTY_PERCENT,TirePressure.SEVENTY_FIVE_PERCENT, TirePressure.ONE_HUNDRED_PERCENT, availableActions.get(5)));
 		}
 		
+		if(ps.getLevel().getLevelNumber() > 3) {
+			actionSpace.addAll(generateCarDriverActions(cars, drivers, availableActions.get(6)));
+		}
+		
 		return actionSpace;
+	}
+	
+	private List<Action> generateCarDriverActions(List<String> cars, List<String> drivers, ActionType aT){
+		List<Action> actions = new ArrayList<>();
+		for(String car : cars) {
+			for(String driver : drivers) {
+				actions.add(new Action(aT, car, driver));
+			}
+		}
+		return actions;
 	}
 	
 	private List<Action> generateCarActions(List<String> cars,ActionType aT){
@@ -107,6 +121,7 @@ public class MDPSolver {
 			System.out.println(resultState);
 			System.out.println(a.getText() + "\n");
 			currentRootNode = new Node(resultState, currentRootNode, a, this, false, null);
+			currentRootNode.setTimeUnits(sim.getSteps());
 		}		
 	}
 	

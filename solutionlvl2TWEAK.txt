@@ -1,0 +1,6 @@
+start;(1,0,0,mazda,stig,all-terrain,50,100%,);(n.a.)
+0;(1,0,0,ferarri,stig,all-terrain,50,100%,);(A2:ferarri)
+1;(1,0,0,ferarri,schumacher,all-terrain,50,100%,);(A3:schumacher)
+2;(5,0,0,ferarri,schumacher,all-terrain,49,100%,);(A1)
+3;(10,0,0,ferarri,schumacher,all-terrain,48,100%,);(A1)
+Goal reached, you bloody ripper!

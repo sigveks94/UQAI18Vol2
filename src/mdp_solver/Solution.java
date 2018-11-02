@@ -21,7 +21,8 @@ public class Solution {
 	
 	public static void main(String[] args) throws IOException {
 		String filePath = new File("").getAbsolutePath() + "/";
-		Solution solution = new Solution(filePath + "input_lvl3TWEAK.txt", filePath + "solution.txt");
+		String addOn = "examples/level_1/";
+		Solution solution = new Solution(filePath + "input_lvl4TWEAK.txt", filePath + "solution_lvl4TWEAK.txt");
 		solution.run();
 	}
 }

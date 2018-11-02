@@ -1,0 +1,10 @@
+start;(1,0,0,mazda,stig,all-terrain,50,100%,);(n.a.)
+0;(1,0,0,humvee,schumacher,all-terrain,50,100%,);(A7:humvee:schumacher)
+1;(6,0,0,humvee,schumacher,all-terrain,49,100%,);(A1)
+2;(11,0,0,humvee,schumacher,all-terrain,47,100%,);(A1)
+3;(16,0,0,humvee,schumacher,all-terrain,44,100%,);(A1)
+4;(20,0,0,humvee,schumacher,all-terrain,43,100%,);(A1)
+5;(24,0,0,humvee,schumacher,all-terrain,40,100%,);(A1)
+6;(28,0,0,humvee,schumacher,all-terrain,37,100%,);(A1)
+7;(30,0,0,humvee,schumacher,all-terrain,34,100%,);(A1)
+Goal reached, you bloody ripper!

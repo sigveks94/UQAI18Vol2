@@ -116,9 +116,9 @@ public class OwnSimulator {
             case 6:
                 nextState = performA6(a, node);
                 break;
-//            case 7:
-//                nextState = performA7(a);
-//                break;
+            case 7:
+                nextState = performA7(a, node);
+                break;
             default:
                 nextState = node.getNodeState();
         }
@@ -430,15 +430,15 @@ public class OwnSimulator {
      * @param a a CHANGE_CAR_AND_DRIVER action object
      * @return the next state
      */
-//    private State performA7(Action a) {
-//
-//        if (currentState.getCarType().equals(a.getCarType())) {
-//            // if car the same, only change driver so no sneaky fuel exploit
-//            return currentState.changeDriver(a.getDriverType());
-//        }
-//        return currentState.changeCarAndDriver(a.getCarType(),
-//                a.getDriverType());
-//    }
+    private State performA7(Action a, Node node) {
+
+        if (node.getNodeState().getCarType().equals(a.getCarType())) {
+            // if car the same, only change driver so no sneaky fuel exploit
+            return node.getNodeState().changeDriver(a.getDriverType());
+        }
+        return node.getNodeState().changeCarAndDriver(a.getCarType(),
+                a.getDriverType());
+    }
 
     /**
      * Perform the CHANGE_TIRE_FUEL_PRESSURE action

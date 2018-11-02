@@ -60,6 +60,10 @@ public class Node {
 		return this.value/this.totVisits;
 	}
 	
+	public void setTimeUnits(int units) {
+		this.timeUnits = units;
+	}
+	
 	public void setTimeUnits() {
 		if(parentNode == null) {
 			timeUnits = 0;
