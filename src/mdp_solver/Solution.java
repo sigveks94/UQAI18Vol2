@@ -11,7 +11,9 @@ public class Solution {
 	private ProblemSpec ps;
 	
 	public Solution(String inputFile, String outputFile) throws IOException {
+		System.out.println("ja");
 		ps = new ProblemSpec(inputFile);
+		System.out.println("her");
 		mdpSolver = new MDPSolver(ps, outputFile);
 	}
 	
@@ -20,9 +22,15 @@ public class Solution {
 	}
 	
 	public static void main(String[] args) throws IOException {
-		String filePath = new File("").getAbsolutePath() + "/";
+		String filePath = new File("").getAbsolutePath();
+		System.out.println(filePath);
 		String addOn = "examples/level_1/";
-		Solution solution = new Solution(filePath + "input_lvl4_2.txt", filePath + "solutionInput_lvl4_2.txt");
+		String input = filePath + "\\" + "input_lvl2_2.txt";
+		System.out.println(input);
+		String output = filePath + "\\" + "solutionInput_lvl2_2_2.txt";
+		System.out.println(output);
+		Solution solution = new Solution(input, output);
+		System.out.println(2);
 		solution.run();
 	}
 }
