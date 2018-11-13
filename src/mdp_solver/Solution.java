@@ -22,7 +22,7 @@ public class Solution {
 	public static void main(String[] args) throws IOException {
 		String filePath = new File("").getAbsolutePath() + "/";
 		String addOn = "examples/level_1/";
-		Solution solution = new Solution(filePath + "input_lvl4TWEAK.txt", filePath + "solution_lvl4TWEAK.txt");
+		Solution solution = new Solution(filePath + "input_lvl4_2.txt", filePath + "solutionInput_lvl4_2.txt");
 		solution.run();
 	}
 }

@@ -345,7 +345,7 @@ public class OwnSimulator {
      *
      * @return move fuel consumption for current state
      */
-    private int getFuelConsumption(Node node) {
+    public int getFuelConsumption(Node node) {
 
         // get parameters of current state
         Terrain terrain = ps.getEnvironmentMap()[node.getNodeState().getPos() - 1];

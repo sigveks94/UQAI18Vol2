@@ -20,6 +20,8 @@ public class MCTS {
 	private MDPSolver mdp;
 	private Node rootNode;
 	//private int iterations;
+	private int goal;
+	private int notGoal;
 	
 	
 	public MCTS(ProblemSpec ps, List<Action> actionSpace, MDPSolver mdp, Node rootNode) {
@@ -30,6 +32,8 @@ public class MCTS {
 		ownSim = new OwnSimulator(ps, mdp);
 		this.rootNode = rootNode;
 		//iterations = 0;
+		goal = 0;
+		notGoal = 0;
 	}
 	
 	//DETTE ER EN ITERASJON
@@ -48,25 +52,37 @@ public class MCTS {
 				currentNode = selectNode(currentNode);
 			}
 			if(currentNode.getTotVisits() == 0) {
-				rollout(currentNode);
-			}
-			else {
-				Node nodeToRollout = expand(currentNode);
-				rollout(nodeToRollout);
-			}
-		}
-		for(Node n : childNodes.get(rootNode)) {
-			if(n instanceof A1Node) {
-				System.out.println(n.getAvgValue());
-				List<Node> outComeNodes = ((A1Node) n).getOutcomeNodes();
-				for(int i = 0; i < ((A1Node) n).getOutcomeNodes().size(); i++) {
-					System.out.println(outComeNodes.get(i).getAvgValue() + " |||| " + ((A1Node) n).getMoveProbs()[i]);
+				boolean wasGoal = rollout(currentNode);
+				if(wasGoal) { //rollout now returns a boolean for whether it ended up in goal or not. 
+					goal ++;
+				}else {
+					notGoal++;
 				}
 			}
 			else {
-				System.out.println(n.getAvgValue());
+				Node nodeToRollout = expand(currentNode);
+				boolean wasGoal = rollout(nodeToRollout);
+				if(wasGoal) { //rollout now returns a boolean for whether it ended up in goal or not. 
+					goal ++;
+				}else {
+					notGoal++;
+				}
 			}
 		}
+//		for(Node n : childNodes.get(rootNode)) {
+//			if(n instanceof A1Node) {
+//				System.out.println(n.getAvgValue());
+//				List<Node> outComeNodes = ((A1Node) n).getOutcomeNodes();
+//				for(int i = 0; i < ((A1Node) n).getOutcomeNodes().size(); i++) {
+//					System.out.println(outComeNodes.get(i).getAvgValue() + " |||| " + ((A1Node) n).getMoveProbs()[i]);
+//				}
+//			}
+//			else {
+//				System.out.println(n.getAvgValue());
+//			}
+//		}
+		
+		goalRate();
 		
 		return selectBestAction(rootNode);
 		}
@@ -74,6 +90,13 @@ public class MCTS {
 
 	//RETURNS THE BEST ACTION OUT OF THE OPTIONS THAT HAS THE BEST VALUE-SCORE
 	private Action selectBestAction(Node node) {
+		if(ps.getLevel().getLevelNumber() > 1) {
+			if(node.getNodeState().getFuel() < ownSim.getFuelConsumption(node)) {
+				int indexOfFuel = ps.getCT() + ps.getDT() + 4 + 1;
+				return actionSpace.get(indexOfFuel);
+			}
+		}
+		
 		List<Node> children = childNodes.get(node);
 		double bestValue = -1;
 		Node bestNode = null;
@@ -84,6 +107,12 @@ public class MCTS {
 			}
 		}
 		return bestNode.getAction();
+	}
+	
+	private void goalRate() {
+		System.out.println("Hit goal: " + goal);
+		System.out.println("--------");
+		System.out.println("Did not hit goal " + notGoal);
 	}
 	
 	
@@ -152,7 +181,7 @@ public class MCTS {
 			}
 	}
 	
-	private void rollout(Node node) {
+	private boolean rollout(Node node) {
 		
 		if(!(node instanceof A1Node)) {
 			double timeSpent = node.getTimeUnits();
@@ -168,19 +197,22 @@ public class MCTS {
 				timeSpent = dummyNode.getTimeUnits()+1;
 			}
 			
+			
 			double reward = calculateReward(dummyNode);
 			
 			
 			backPropagate(node, reward);
+			
+			return reward > 0;
 		}
 		else {
-			rolloutA1((A1Node) node);
+			return rolloutA1((A1Node) node);
 		}
 		
 		
 	}
 	
-	private void rolloutA1(A1Node a1Node) {
+	private boolean rolloutA1(A1Node a1Node) {
 		
 		for(Node node : a1Node.getOutcomeNodes()) {
 			double timeSpent = node.getTimeUnits();
@@ -201,6 +233,7 @@ public class MCTS {
 		a1Node.updateA1Node();
 		double reward = a1Node.getValue();
 		backPropagate(a1Node.getParentNode(), reward);
+		return reward > 0;
 	}
 	
 	
